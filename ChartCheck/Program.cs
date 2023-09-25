@@ -768,9 +768,7 @@ namespace ChartCheck
                     Console.ResetColor();
                 }
             }
-            Console.WriteLine("Image test starts:");
             ImageTest(planSetup);
-            Console.WriteLine("Image test complete.");
             Console.WriteLine("========= Completion of checks =========\n");
         }
         static void ImageTest(PlanSetup plan)
@@ -779,7 +777,12 @@ namespace ChartCheck
             if (plan.StructureSet != null)
             {
                 var image = plan.StructureSet.Image;
-                WriteInColor($"Slice thickness: {image.ZRes} mm\n");
+                WriteInColor($"Slice thickness: ");
+                WriteInColor($"{image.ZRes} mm\n", ConsoleColor.Yellow);
+                WriteInColor($"3D image ID: ");
+                WriteInColor($"{image.Id}\n", ConsoleColor.Yellow);
+                WriteInColor($"Structure set ID: ");
+                WriteInColor($"{plan.StructureSet.Id}\n",ConsoleColor.Yellow);
             }
             else
             {
@@ -825,7 +828,7 @@ namespace ChartCheck
                     WriteInColor("ERROR: not a static field. \n", ConsoleColor.Red);
                 }
                 WriteInColor($"\tTreatment unit: {beam.TreatmentUnit.Id}\t");
-                if (beam.TreatmentUnit.Id != "TrueBeam1" && beam.TreatmentUnit.Id != "TrueBeam-STX")
+                if (beam.TreatmentUnit.Id != "TrueBeam1" && beam.TreatmentUnit.Id != "TrueBeamSTX")
                 {
                     WriteInColor($"ERROR: wrong unit.\n", ConsoleColor.Red);
                 }
