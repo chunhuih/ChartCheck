@@ -340,9 +340,9 @@ namespace ChartCheck
                 }
                 foreach (var item in planSetup.TreatmentSessions)
                 {
-//                    WriteInColor($"Session {item.Status}\t");
+                    //                    WriteInColor($"Session {item.Status}\t");
                 }
-//                Console.WriteLine("");
+                //                Console.WriteLine("");
                 var notes = rx.Notes;
                 if (notes.ToLower().Contains("dibh"))
                 {
@@ -365,10 +365,14 @@ namespace ChartCheck
             {
                 WriteInColor("ERROR: The prescription is missing for this plan.\n", ConsoleColor.Red);
             }
-            // Check if the plan uses a structure set.
-            if (planSetup.StructureSet == null && (planSetup.Id.ToLower() == "tbi" || planSetup.Id.ToLower() == "tbi body" || planSetup.Id.ToLower() == "ap tbi" || planSetup.Id.ToLower() == "pa tbi"))
+            if (IsConventionalTBI(planSetup))
             {
                 CheckTBIPlan(planSetup);
+                return;
+            }
+            if (IsConventionalTBICW(planSetup))
+            {
+                CheckTBIPlanCW(planSetup);
                 return;
             }
             // If the plan is based on 3D images, check treatment plan settings.
@@ -592,7 +596,7 @@ namespace ChartCheck
                         }
                     }
                     bool nameCheck = true;
-                    if (rx != null && rx.Notes.ToLower().Contains("bolus") && !beam.Name.ToLower().Contains("wb") && rx.Notes.ToLower().Contains("no bolus"))
+                    if (rx != null && rx.Notes.ToLower().Contains("bolus") && !beam.Name.ToLower().Contains("wb") && !rx.Notes.ToLower().Contains("no bolus"))
                     {
                         WriteInColor("Name checked failed: missing bolus label.\n", ConsoleColor.Red);
                         nameCheck = false;
@@ -771,6 +775,32 @@ namespace ChartCheck
             ImageTest(planSetup);
             Console.WriteLine("========= Completion of checks =========\n");
         }
+
+        static bool IsConventionalTBI(PlanSetup planSetup)
+        {
+            if (planSetup.StructureSet == null &&
+                (planSetup.Id.ToLower() == "tbi" ||
+                planSetup.Id.ToLower() == "tbi tb-1" ||
+                planSetup.Id.ToLower() == "tbi tb1" ||
+                planSetup.Id.ToLower() == "tbi tb-stx" ||
+                planSetup.Id.ToLower() == "tbi tbx" ||
+                planSetup.Id.ToLower() == "tbi body" ||
+                planSetup.Id.ToLower() == "ap tbi" ||
+                planSetup.Id.ToLower() == "pa tbi"))
+                return true;
+            return false;
+        }
+
+        static bool IsConventionalTBICW(PlanSetup planSetup)
+        {
+            if (planSetup.StructureSet != null &&
+                planSetup.Id.ToLower().Contains("cw") &&
+                (planSetup.Id.ToLower().Contains("ap") || planSetup.Id.ToLower().Contains("pa")) &&
+                (planSetup.Id.ToLower().Contains("l") || planSetup.Id.ToLower().Contains("r")))
+                return true;
+            return false;
+        }
+
         static void ImageTest(PlanSetup plan)
         {
             Console.WriteLine("========= Plan image checks: =========");
@@ -782,33 +812,33 @@ namespace ChartCheck
                 WriteInColor($"3D image ID: ");
                 WriteInColor($"{image.Id}\n", ConsoleColor.Yellow);
                 WriteInColor($"Structure set ID: ");
-                WriteInColor($"{plan.StructureSet.Id}\n",ConsoleColor.Yellow);
+                WriteInColor($"{plan.StructureSet.Id}\n", ConsoleColor.Yellow);
             }
             else
             {
                 WriteInColor("No structure set for this plan.\n");
             }
             return;
-/*            int nPlanes = image.ZSize;
-            int[,] voxelPlane = new int[image.XSize, image.YSize];
-            int[,,] voxelVolume = new int[image.XSize, image.YSize, image.ZSize];
-            double[,,] huValues = new double[image.XSize, image.YSize, image.ZSize];
-            for (int z = 0; z < nPlanes; z++)
-            {
-                image.GetVoxels(z, voxelPlane);
-                Console.Write($"\r                                           ");
-                Console.Write($"\rReading image plane at index: {z}");
-                for (int x = 0; x < image.XSize; x++)
-                {
-                    for (int y = 0; y < image.YSize; y++)
-                    {
-                        voxelVolume[x, y, z] = voxelPlane[x, y];
-                        huValues[x, y, z] = image.VoxelToDisplayValue(voxelPlane[x, y]);
-                    }
-                }
-            }
-            Console.Write("\nAll the image data was read into memory.\n");
-*/
+            /*            int nPlanes = image.ZSize;
+                        int[,] voxelPlane = new int[image.XSize, image.YSize];
+                        int[,,] voxelVolume = new int[image.XSize, image.YSize, image.ZSize];
+                        double[,,] huValues = new double[image.XSize, image.YSize, image.ZSize];
+                        for (int z = 0; z < nPlanes; z++)
+                        {
+                            image.GetVoxels(z, voxelPlane);
+                            Console.Write($"\r                                           ");
+                            Console.Write($"\rReading image plane at index: {z}");
+                            for (int x = 0; x < image.XSize; x++)
+                            {
+                                for (int y = 0; y < image.YSize; y++)
+                                {
+                                    voxelVolume[x, y, z] = voxelPlane[x, y];
+                                    huValues[x, y, z] = image.VoxelToDisplayValue(voxelPlane[x, y]);
+                                }
+                            }
+                        }
+                        Console.Write("\nAll the image data was read into memory.\n");
+            */
         }
         static void CheckTBIPlan(PlanSetup planSetup)
         {
@@ -841,7 +871,8 @@ namespace ChartCheck
                 {
                     WriteInColor($"ERROR: Beam energy {beam.EnergyModeDisplayName}\n", ConsoleColor.Red);
                 }
-                else {
+                else
+                {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
                 WriteInColor($"\tGantry: {GantryAngle}\t");
@@ -849,7 +880,7 @@ namespace ChartCheck
                 {
                     WriteInColor($"ERROR: Gantry angle invalid: {GantryAngle}\n", ConsoleColor.Red);
                 }
-                else if (beam.TreatmentUnit.Id == "TrueBeam-STX" && (GantryAngle > 100 || GantryAngle < 85))
+                else if (beam.TreatmentUnit.Id == "TrueBeamSTX" && (GantryAngle > 100 || GantryAngle < 85))
                 {
                     WriteInColor($"ERROR: Gantry angle invalid: {GantryAngle}\n", ConsoleColor.Red);
                 }
@@ -862,7 +893,7 @@ namespace ChartCheck
                 {
                     WriteInColor($"ERROR: Collimator angle invalid: {collimatorAngle}\n", ConsoleColor.Red);
                 }
-                else if (beam.TreatmentUnit.Id == "TrueBeam-STX" && collimatorAngle != 135)
+                else if (beam.TreatmentUnit.Id == "TrueBeamSTX" && collimatorAngle != 135)
                 {
                     WriteInColor($"ERROR: Collimator angle invalid: {collimatorAngle}\n", ConsoleColor.Red);
                 }
@@ -943,7 +974,46 @@ namespace ChartCheck
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
             }
-
+        }
+        static void CheckTBIPlanCW(PlanSetup planSetup)
+        {
+            WriteInColor($"Checking TBI CW boost plan: {planSetup.Id}\n");
+            foreach (var beam in planSetup.Beams)
+            {
+                double GantryAngle = beam.ControlPoints.First().GantryAngle;
+                double collimatorAngle = beam.ControlPoints.First().CollimatorAngle;
+                double couchAngle = beam.ControlPoints.First().PatientSupportAngle;  // couch angle defined as IEC 61217
+                double jawX1 = beam.ControlPoints.First().JawPositions.X1;
+                double jawX2 = beam.ControlPoints.First().JawPositions.X2;
+                double jawY1 = beam.ControlPoints.First().JawPositions.Y1;
+                double jawY2 = beam.ControlPoints.First().JawPositions.Y2;
+                WriteInColor($"Beam \"{beam.Id}\" \"{beam.Name}\":\n");
+                if (beam.ControlPoints.Count() > 2)
+                {
+                    WriteInColor("ERROR: not a static field. \n", ConsoleColor.Red);
+                }
+                WriteInColor($"\tTreatment unit: {beam.TreatmentUnit.Id}\t");
+                if (beam.TreatmentUnit.Id != "TrueBeam1" && beam.TreatmentUnit.Id != "TrueBeamSTX")
+                {
+                    WriteInColor($"ERROR: wrong unit.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tEnergy: {beam.EnergyModeDisplayName}\n");
+                WriteInColor($"\tGantry: {GantryAngle}\n");
+                WriteInColor($"\tCollimator: {collimatorAngle}\n");
+                WriteInColor($"\tCouch angle: {couchAngle}\n");
+                WriteInColor($"\tX1: {jawX1} X2: {jawX2} Y1: {jawY1} Y2: {jawY2}\n");
+                WriteInColor($"\tSSD: {beam.PlannedSSD} mm\n");
+                WriteInColor($"\tDose rate: {beam.DoseRate}\n");
+                WriteInColor($"\tDose rate: {beam.Meterset.Value} {beam.Meterset.Unit}\n");
+                WriteInColor($"\tTolerance: {beam.ToleranceTableLabel}\n");
+                WriteInColor($"\tTime: {beam.TreatmentTime / 60} minutes.\n");
+                WriteInColor($"\tTray: {beam.Trays.First().Id}\n");
+                WriteInColor($"\tTechnique: {beam.Technique.Id} {beam.Technique.Name}\n");
+            }
         }
     }
     public class CPModel
