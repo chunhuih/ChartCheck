@@ -919,10 +919,19 @@ namespace ChartCheck
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tSSD: {beam.PlannedSSD}\t");
+                WriteInColor($"\tSSD: {beam.PlannedSSD} mm\t");
                 if (beam.PlannedSSD < 4030 || beam.PlannedSSD > 4270)
                 {
                     WriteInColor($"WARNING: SSD = {beam.PlannedSSD} out of range.\n", ConsoleColor.Yellow);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tMU = {beam.Meterset.Value} {beam.Meterset.Unit}\t");
+                if (beam.Meterset.Value > 2600 || beam.Meterset.Value < 1800)
+                {
+                    WriteInColor($"ERROR: MU out of tolerance.\n", ConsoleColor.Red);
                 }
                 else
                 {
