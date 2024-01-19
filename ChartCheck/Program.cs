@@ -65,13 +65,11 @@ namespace ChartCheck
         {
             string logName = System.AppDomain.CurrentDomain.FriendlyName + ".log";
             // Console.Clear();
-            Console.WriteLine("=========================================================================\n");
-            Console.WriteLine("This is a chart check application.\n");
-            Console.WriteLine("Author: Chunhui Han.\n");
-            Console.WriteLine("=========================================================================\n");
+            WriteInColor("=========================================================================\n", ConsoleColor.White);
+            WriteInColor("A chart check application by: Chunhui Han.\n", ConsoleColor.White);
+            WriteInColor("=========================================================================\n", ConsoleColor.White);
 
             string automationPredicate = ConfigurationManager.AppSettings.Get("Automation");
-            Console.WriteLine($"Automation setting is set as: \"{automationPredicate}\".");
             string mrn;
             if (automationPredicate != null && automationPredicate.ToLower() == "t")
             {
@@ -99,21 +97,17 @@ namespace ChartCheck
             var patient = app.OpenPatientById(mrn);
             if (patient == null)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("ERROR: This patient ID does not exist.\n");
-                Console.WriteLine("Please use a correct patient ID.\n");
-                Console.ResetColor();
+                WriteInColor("ERROR: This patient ID does not exist.\n", ConsoleColor.Red);
+                WriteInColor("Please use a correct patient ID.\n", ConsoleColor.Red);
                 return;
             }
             Console.Write("The name of this patient is: ");
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"{patient.Name}");
-            Console.ResetColor();
+            WriteInColor($"{patient.Name}\n", ConsoleColor.Yellow);
             int nCourses = patient.Courses.Count();
             if (nCourses == 0)
             {
-                Console.WriteLine("ERROR: This patient does not contain any course.\n");
-                Console.WriteLine("Please choose another patient with existing courses and run this application again.\n");
+                WriteInColor("ERROR: This patient does not contain any course.\n", ConsoleColor.Red);
+                WriteInColor("Please choose another patient with existing courses and run this application again.\n", ConsoleColor.Red);
                 return;
             }
             int nPlans = 0;
@@ -123,11 +117,10 @@ namespace ChartCheck
             }
             if (nPlans == 0)
             {
-                Console.WriteLine("ERROR: This patient does not contain any plan.\n");
-                Console.WriteLine("Please choose another patient with existing plans and run this application again.\n");
+                WriteInColor("ERROR: This patient does not contain any plan.\n", ConsoleColor.Red);
+                WriteInColor("Please choose another patient with existing plans and run this application again.\n", ConsoleColor.Red);
                 return;
             }
-            Console.WriteLine($"Found {nPlans} plan(s) in {nCourses} courses for this patient with ID: {mrn}.");
             Console.WriteLine("Please choose a treatment plan from the list below:");
             int index = 0;
             List<string> courseList = new List<string>();
@@ -338,11 +331,12 @@ namespace ChartCheck
                 {
                     WriteInColor($"\tERROR: Session check failed.\n", ConsoleColor.Red);
                 }
-                foreach (var item in planSetup.TreatmentSessions)
+                WriteInColor($"Status of sessions: ");
+                for(int i = 0; i < planSetup.TreatmentSessions.Count(); i++)
                 {
-                    //                    WriteInColor($"Session {item.Status}\t");
+                    WriteInColor($"{i}, {planSetup.TreatmentSessions.ElementAt(i).Status}.  ");
                 }
-                //                Console.WriteLine("");
+                Console.WriteLine("");
                 var notes = rx.Notes;
                 if (notes.ToLower().Contains("dibh"))
                 {
@@ -387,14 +381,13 @@ namespace ChartCheck
                 WriteInColor($"{item.Value}\n", ConsoleColor.Yellow);
             }
             bool useGating = planSetup.UseGating;
-            Console.ForegroundColor = ConsoleColor.Yellow;
             if (planSetup.UseGating)
             {
-                Console.WriteLine("Plan using gating.");
+                WriteInColor("Plan using gating.", ConsoleColor.Yellow);
             }
             else
             {
-                Console.WriteLine("Gating is not used.");
+                WriteInColor("Gating is not used.", ConsoleColor.Yellow);
             }
             if (planSetup.StructureSet != null)
             {
@@ -404,7 +397,6 @@ namespace ChartCheck
                     WriteInColor($"Gating check failed. Structure name: {structureSetId}\n", ConsoleColor.Red);
                 }
             }
-            Console.ResetColor();
             Console.WriteLine("========= Tx field checks: =========");
             // check the treatment plan type: VMAT, Conformal ARC, SRS, Field-in-field, etc.
             bool is3D = false;
@@ -488,52 +480,36 @@ namespace ChartCheck
                     Console.Write("ID: ");
                     WriteInColor($"{beam.Id} ", ConsoleColor.Yellow);
                     Console.Write($"Couch at ");
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.Write(String.Format("{0,-5}", $"{couchAngle}"));
-                    Console.ResetColor();
+                    WriteInColor(String.Format("{0,-5}", $"{couchAngle}"), ConsoleColor.Yellow);
                     Console.Write($" gantry range: ");
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.Write(String.Format("{0,-5}", $"{startGantryAngle}"));
-                    Console.ResetColor();
+                    WriteInColor(String.Format("{0,-5}", $"{startGantryAngle}"), ConsoleColor.Yellow);
                     Console.Write($" -- ");
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.Write(String.Format("{0, -6}", $"{endGantryAngle}"));
-                    Console.ResetColor();
+                    WriteInColor(String.Format("{0, -6}", $"{endGantryAngle}"), ConsoleColor.Yellow);
                     if (couchAngle > 5 && couchAngle < 90)
                     {
                         if ((startGantryAngle < 330 && startGantryAngle > 180) || (endGantryAngle < 330 && endGantryAngle > 180))
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("ERROR: potential collision hazard.");
-                            Console.ResetColor();
+                            WriteInColor("ERROR: potential collision hazard.\n", ConsoleColor.Red);
                         }
                         else
                         {
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Collision check passed.");
-                            Console.ResetColor();
+                            WriteInColor("Collision check passed.\n", ConsoleColor.Green);
                         }
                     }
                     else if (couchAngle > 270 && couchAngle < 355)
                     {
                         if ((startGantryAngle < 180 && startGantryAngle > 30) || (endGantryAngle < 180 && endGantryAngle > 30))
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("ERROR: potential collision hazard.");
-                            Console.ResetColor();
+                            WriteInColor("ERROR: potential collision hazard.\n", ConsoleColor.Red);
                         }
                         else
                         {
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Collision check passed.");
-                            Console.ResetColor();
+                            WriteInColor("Collision check passed.\n", ConsoleColor.Green);
                         }
                     }
                     else
                     {
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("Collision check passed.");
-                        Console.ResetColor();
+                        WriteInColor("Collision check passed.\n", ConsoleColor.Green);
                     }
                 }
             }
@@ -775,7 +751,6 @@ namespace ChartCheck
             ImageTest(planSetup);
             Console.WriteLine("========= Completion of checks =========\n");
         }
-
         static bool IsConventionalTBI(PlanSetup planSetup)
         {
             if (planSetup.StructureSet == null &&
@@ -790,7 +765,6 @@ namespace ChartCheck
                 return true;
             return false;
         }
-
         static bool IsConventionalTBICW(PlanSetup planSetup)
         {
             if (planSetup.StructureSet != null &&
@@ -800,7 +774,6 @@ namespace ChartCheck
                 return true;
             return false;
         }
-
         static void ImageTest(PlanSetup plan)
         {
             Console.WriteLine("========= Plan image checks: =========");
@@ -813,6 +786,17 @@ namespace ChartCheck
                 WriteInColor($"{image.Id}\n", ConsoleColor.Yellow);
                 WriteInColor($"Structure set ID: ");
                 WriteInColor($"{plan.StructureSet.Id}\n", ConsoleColor.Yellow);
+                if (image.Id.ToLower().Contains("ave") || image.Id.ToLower().Contains("-") || image.Id.ToLower().Contains("bh"))
+                {
+                    if(plan.UseGating)
+                    {
+                        WriteInColor("Gating is used.\n", ConsoleColor.Green);
+                    }
+                    else                    
+                    {
+                        WriteInColor("Gating is not used. Please verify.\n", ConsoleColor.Yellow);
+                    }
+                }
             }
             else
             {
@@ -1011,17 +995,90 @@ namespace ChartCheck
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
                 WriteInColor($"\tEnergy: {beam.EnergyModeDisplayName}\n");
-                WriteInColor($"\tGantry: {GantryAngle}\n");
-                WriteInColor($"\tCollimator: {collimatorAngle}\n");
-                WriteInColor($"\tCouch angle: {couchAngle}\n");
+                WriteInColor($"\tGantry: {GantryAngle}\t");
+                if (GantryAngle != 0)
+                {
+                    WriteInColor($"ERROR: wrong gantry angle.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tCollimator: {collimatorAngle}\t");
+                if (collimatorAngle != 315)
+                {
+                    WriteInColor($"ERROR: wrong collimator angle.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tCouch angle: {couchAngle}\t");
+                if (couchAngle != 0)
+                {
+                    WriteInColor($"ERROR: wrong couch angle.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tSSD: {beam.PlannedSSD} mm\t");
+                if (beam.PlannedSSD.ToString("n0") != "1000")
+                {
+                    WriteInColor($"ERROR: wrong SSD.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tDose rate: {beam.DoseRate}\t");
+                if (beam.DoseRate != 1000)
+                {
+                    WriteInColor($"ERROR: wrong dose rate.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tMU: {beam.Meterset.Value.ToString("n1")} {beam.Meterset.Unit}\n");
+                WriteInColor($"\tTime: {(beam.TreatmentTime / 60).ToString("n1")} minutes.\t");
+                if (beam.Meterset.Value / beam.DoseRate * 1.2 > beam.TreatmentTime)
+                {
+                    WriteInColor($"ERROR: wrong time limit.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tTolerance: {beam.ToleranceTableLabel}\t");
+                if (beam.ToleranceTableLabel != "TBI CW Electron")
+                {
+                    WriteInColor($"ERROR: wrong tolerance table.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tTechnique: {beam.Technique.Id}\t");
+                if (beam.Technique.Id != "STATIC")
+                {
+                    WriteInColor($"ERROR: wrong technique.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tTray: {beam.Trays.First().Id}\t");
+                if (beam.Trays.Count() != 1)
+                {
+                    WriteInColor($"ERROR: > 1 trays defined.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"Number of trays = 1: Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"\tApplicator: {beam.Applicator.Id}\n");
                 WriteInColor($"\tX1: {jawX1} X2: {jawX2} Y1: {jawY1} Y2: {jawY2}\n");
-                WriteInColor($"\tSSD: {beam.PlannedSSD} mm\n");
-                WriteInColor($"\tDose rate: {beam.DoseRate}\n");
-                WriteInColor($"\tDose rate: {beam.Meterset.Value} {beam.Meterset.Unit}\n");
-                WriteInColor($"\tTolerance: {beam.ToleranceTableLabel}\n");
-                WriteInColor($"\tTime: {beam.TreatmentTime / 60} minutes.\n");
-                WriteInColor($"\tTray: {beam.Trays.First().Id}\n");
-                WriteInColor($"\tTechnique: {beam.Technique.Id} {beam.Technique.Name}\n");
             }
         }
     }
