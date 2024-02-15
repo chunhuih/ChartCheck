@@ -102,7 +102,8 @@ namespace ChartCheck
                 return;
             }
             Console.Write("The name of this patient is: ");
-            WriteInColor($"{patient.Name}\n", ConsoleColor.Yellow);
+            WriteInColor($"\"{patient.LastName}, {patient.FirstName} {patient.MiddleName}\"\n", ConsoleColor.Yellow);
+            // patient.Id2
             int nCourses = patient.Courses.Count();
             if (nCourses == 0)
             {
@@ -135,7 +136,7 @@ namespace ChartCheck
                     courseList.Add(eachCourse.Id);
                     planList.Add(eachPlan.Id);
                     string rxname = "";
-                    string planApprovalStatus = "";
+                    string planApprovalStatus = PlanSetupApprovalStatus.Unknown.ToString();
                     try
                     {
                         rxname = eachPlan.RTPrescription != null ? eachPlan.RTPrescription.Name : "N/A";
@@ -152,22 +153,18 @@ namespace ChartCheck
                     {
                         planApprovalStatus = "N/A: Workflow plan";
                     }
-                    if (rxname == "N/A")
+                    var color = ConsoleColor.White;
+                    if (rxname == "N/A" || planApprovalStatus == "Rejected" || 
+                        planApprovalStatus == PlanSetupApprovalStatus.Completed.ToString() ||
+                        planApprovalStatus == PlanSetupApprovalStatus.CompletedEarly.ToString())
                     {
-                        WriteInColor($"{String.Format("{0,-5}", $"{index}")} " +
-                            $"{String.Format("{0,-30}", $"{courseList[index]} ({eachCourse.ClinicalStatus})")} " +
-                            $"{String.Format("{0,-20}", $"{rxname}")} " +
-                            $"{String.Format("{0,-20}", $"\"{planList[index]}\"")} " +
-                            $"({planApprovalStatus})\n", ConsoleColor.Red);
+                        color = ConsoleColor.Red;
                     }
-                    else
-                    {
-                        WriteInColor($"{String.Format("{0,-5}", $"{index}")} " +
-                            $"{String.Format("{0,-30}", $"{courseList[index]} ({eachCourse.ClinicalStatus})")} " +
-                            $"{String.Format("{0,-20}", $"{rxname}")} " +
-                            $"{String.Format("{0,-20}", $"\"{planList[index]}\"")} " +
-                            $"({planApprovalStatus})\n");
-                    }
+                    WriteInColor($"{String.Format("{0,-5}", $"{index}")} " +
+                        $"{String.Format("{0,-30}", $"{courseList[index]} ({eachCourse.ClinicalStatus})")} " +
+                        $"{String.Format("{0,-20}", $"{rxname}")} " +
+                        $"{String.Format("{0,-20}", $"\"{planList[index]}\"")} " +
+                        $"{planApprovalStatus}\n", color);
                     index++;
                 }
             }
@@ -282,17 +279,25 @@ namespace ChartCheck
             Console.WriteLine("========= Prescription checks: =========");
             if (rx != null)
             {
+                Console.Write($"Prescription name: ");
+                WriteInColor($"\"{rx.Id}\". ", ConsoleColor.Yellow);
+                Console.Write("Target(s):");
+                foreach (var target in rx.Targets)
+                {
+                    WriteInColor($" \"{target.TargetId}\" ({target.DosePerFraction}/fx)", ConsoleColor.Yellow);
+                }
+                Console.WriteLine("");
                 IEnumerable<string> rxDose = rx.Energies;
-                Console.Write($"Energy modes in the prescription:");
+                Console.Write($"Mode:");
                 foreach (string s in rx.EnergyModes)
                 {
                     WriteInColor($" \"{s}\"", ConsoleColor.Yellow);
                 }
-                Console.WriteLine("");
-                WriteInColor("Energies defined in prescription:");
+                Console.Write(". ");
+                WriteInColor("Energies:");
                 foreach (string s in rxDose)
                 {
-                    WriteInColor($" \"{s}\"", ConsoleColor.Yellow);
+                    WriteInColor($" \"{s}\".", ConsoleColor.Yellow);
                 }
                 Console.WriteLine("");
                 Console.Write("Beam energies in the plan:");
@@ -304,7 +309,6 @@ namespace ChartCheck
                     }
                 }
                 Console.WriteLine("");
-
                 var fx = rx.NumberOfFractions;
                 Console.Write($"No. prescribed fractions: ");
                 WriteInColor($"{fx}", ConsoleColor.Yellow);
@@ -334,7 +338,12 @@ namespace ChartCheck
                 WriteInColor($"Status of sessions: ");
                 for(int i = 0; i < planSetup.TreatmentSessions.Count(); i++)
                 {
-                    WriteInColor($"{i}, {planSetup.TreatmentSessions.ElementAt(i).Status}.  ");
+                    var color = ConsoleColor.Green;
+                    if(planSetup.TreatmentSessions.ElementAt(i).Status == TreatmentSessionStatus.Completed)
+                    {
+                        color = ConsoleColor.Yellow;
+                    }
+                    WriteInColor($"{i + 1}, {planSetup.TreatmentSessions.ElementAt(i).Status}.  ", color);
                 }
                 Console.WriteLine("");
                 var notes = rx.Notes;
@@ -383,11 +392,11 @@ namespace ChartCheck
             bool useGating = planSetup.UseGating;
             if (planSetup.UseGating)
             {
-                WriteInColor("Plan using gating.", ConsoleColor.Yellow);
+                WriteInColor("Plan using gating.\n", ConsoleColor.Yellow);
             }
             else
             {
-                WriteInColor("Gating is not used.", ConsoleColor.Yellow);
+                WriteInColor("Gating is not used.\n", ConsoleColor.Yellow);
             }
             if (planSetup.StructureSet != null)
             {
