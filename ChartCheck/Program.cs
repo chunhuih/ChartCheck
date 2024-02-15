@@ -223,11 +223,6 @@ namespace ChartCheck
                 Console.WriteLine("Please choose an external beam plan and run this application again.");
                 return;
             }
-            // First check beams
-            if (planSetup.Beams.Count() == 0)
-            {
-                WriteInColor($"WARNING: The plan has no beams defined.\n", ConsoleColor.Yellow);
-            }
             // check if treatment beams are defined.
             int numValidBeams = 0;
             foreach (var beam in planSetup.Beams)
@@ -239,8 +234,8 @@ namespace ChartCheck
             }
             if (numValidBeams == 0)
             {
-                Console.WriteLine($"ERROR: The plan has no treatment beams.");
-                Console.WriteLine("Please choose an External Beam plan with treatment beams and run this application again.");
+                WriteInColor($"Warning: The plan has no treatment beams.\n", ConsoleColor.Yellow);
+                ImageChecks(planSetup);
                 return;
             }
             // check prescription and plan approval status.
@@ -757,7 +752,7 @@ namespace ChartCheck
                     Console.ResetColor();
                 }
             }
-            ImageTest(planSetup);
+            ImageChecks(planSetup);
             Console.WriteLine("========= Completion of checks =========\n");
         }
         static bool IsConventionalTBI(PlanSetup planSetup)
@@ -783,16 +778,16 @@ namespace ChartCheck
                 return true;
             return false;
         }
-        static void ImageTest(PlanSetup plan)
+        static void ImageChecks(PlanSetup plan)
         {
             Console.WriteLine("========= Plan image checks: =========");
             if (plan.StructureSet != null)
             {
                 var image = plan.StructureSet.Image;
                 WriteInColor($"Slice thickness: ");
-                WriteInColor($"{image.ZRes} mm\n", ConsoleColor.Yellow);
+                WriteInColor($"{image.ZRes} mm.\t", ConsoleColor.Yellow);
                 WriteInColor($"3D image ID: ");
-                WriteInColor($"{image.Id}\n", ConsoleColor.Yellow);
+                WriteInColor($"{image.Id}.\t", ConsoleColor.Yellow);
                 WriteInColor($"Structure set ID: ");
                 WriteInColor($"{plan.StructureSet.Id}\n", ConsoleColor.Yellow);
                 if (image.Id.ToLower().Contains("ave") || image.Id.ToLower().Contains("-") || image.Id.ToLower().Contains("bh"))
