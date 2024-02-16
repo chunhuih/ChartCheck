@@ -2,14 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 using System.Configuration;
-using System.Collections.Specialized;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
-using System.Xml.Linq;
-using System.CodeDom;
 
 // TODO: Replace the following version attributes by creating AssemblyInfo.cs. You can do this in the properties of the Visual Studio project.
 // [assembly: AssemblyInformationalVersion("1.0")]
@@ -103,7 +98,6 @@ namespace ChartCheck
             }
             Console.Write("The name of this patient is: ");
             WriteInColor($"\"{patient.LastName}, {patient.FirstName} {patient.MiddleName}\"\n", ConsoleColor.Yellow);
-            // patient.Id2
             int nCourses = patient.Courses.Count();
             if (nCourses == 0)
             {
@@ -792,11 +786,11 @@ namespace ChartCheck
                 WriteInColor($"{plan.StructureSet.Id}\n", ConsoleColor.Yellow);
                 if (image.Id.ToLower().Contains("ave") || image.Id.ToLower().Contains("-") || image.Id.ToLower().Contains("bh"))
                 {
-                    if(plan.UseGating)
+                    if (plan.UseGating)
                     {
                         WriteInColor("Gating is used.\n", ConsoleColor.Green);
                     }
-                    else                    
+                    else
                     {
                         WriteInColor("Gating is not used. Please verify.\n", ConsoleColor.Yellow);
                     }
@@ -807,26 +801,6 @@ namespace ChartCheck
                 WriteInColor("No structure set for this plan.\n");
             }
             return;
-            /*            int nPlanes = image.ZSize;
-                        int[,] voxelPlane = new int[image.XSize, image.YSize];
-                        int[,,] voxelVolume = new int[image.XSize, image.YSize, image.ZSize];
-                        double[,,] huValues = new double[image.XSize, image.YSize, image.ZSize];
-                        for (int z = 0; z < nPlanes; z++)
-                        {
-                            image.GetVoxels(z, voxelPlane);
-                            Console.Write($"\r                                           ");
-                            Console.Write($"\rReading image plane at index: {z}");
-                            for (int x = 0; x < image.XSize; x++)
-                            {
-                                for (int y = 0; y < image.YSize; y++)
-                                {
-                                    voxelVolume[x, y, z] = voxelPlane[x, y];
-                                    huValues[x, y, z] = image.VoxelToDisplayValue(voxelPlane[x, y]);
-                                }
-                            }
-                        }
-                        Console.Write("\nAll the image data was read into memory.\n");
-            */
         }
         static void CheckTBIPlan(PlanSetup planSetup)
         {
@@ -1084,22 +1058,6 @@ namespace ChartCheck
                 WriteInColor($"\tApplicator: {beam.Applicator.Id}\n");
                 WriteInColor($"\tX1: {jawX1} X2: {jawX2} Y1: {jawY1} Y2: {jawY2}\n");
             }
-        }
-    }
-    public class CPModel
-    {
-        public double MetersetWeight { get; set; }
-        public double GantryAngle { get; set; }
-        public double CollimatorAngle { get; set; }
-        public float[,] MLCPositions { get; set; }
-        public CPModel()
-        {
-            // If the number of leaf pairs is not provided, assume that it has 60 leaf pairs.
-            MLCPositions = new float[2, 60];
-        }
-        public CPModel(int numLeafPairs)
-        {
-            MLCPositions = new float[2, numLeafPairs];
         }
     }
 }
