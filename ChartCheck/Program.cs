@@ -50,7 +50,7 @@ namespace ChartCheck
             w.Write($"{DateTime.Now.ToLongTimeString()} {DateTime.Now.ToLongDateString()}");
             w.WriteLine($": {logMessage}");
         }
-        public static void WriteInColor(string s, ConsoleColor color = ConsoleColor.White)
+        public static void WriteInColor(string s, ConsoleColor color = ConsoleColor.Gray)
         {
             Console.ForegroundColor = color;
             Console.Write(s);
@@ -60,9 +60,9 @@ namespace ChartCheck
         {
             string logName = System.AppDomain.CurrentDomain.FriendlyName + ".log";
             // Console.Clear();
-            WriteInColor("=========================================================================\n", ConsoleColor.White);
-            WriteInColor("A chart check application by: Chunhui Han.\n", ConsoleColor.White);
-            WriteInColor("=========================================================================\n", ConsoleColor.White);
+            WriteInColor("=========================================================================\n", ConsoleColor.Gray);
+            WriteInColor("A chart check application by: Chunhui Han.\n", ConsoleColor.Gray);
+            WriteInColor("=========================================================================\n", ConsoleColor.Gray);
 
             string automationPredicate = ConfigurationManager.AppSettings.Get("Automation");
             string mrn;
@@ -97,7 +97,14 @@ namespace ChartCheck
                 return;
             }
             Console.Write("The name of this patient is: ");
-            WriteInColor($"\"{patient.LastName}, {patient.FirstName} {patient.MiddleName}\"\n", ConsoleColor.Yellow);
+            WriteInColor($"{patient.LastName}, {patient.FirstName}", ConsoleColor.Yellow);
+            if (patient.MiddleName == string.Empty)
+            {
+                WriteInColor($"\n", ConsoleColor.Yellow);
+            }
+            else {
+                WriteInColor($" {patient.MiddleName}\n", ConsoleColor.Yellow);
+            }
             int nCourses = patient.Courses.Count();
             if (nCourses == 0)
             {
@@ -157,7 +164,7 @@ namespace ChartCheck
                     WriteInColor($"{String.Format("{0,-5}", $"{index}")} " +
                         $"{String.Format("{0,-30}", $"{courseList[index]} ({eachCourse.ClinicalStatus})")} " +
                         $"{String.Format("{0,-20}", $"{rxname}")} " +
-                        $"{String.Format("{0,-20}", $"\"{planList[index]}\"")} " +
+                        $"{String.Format("{0,-20}", $"{planList[index]}")} " +
                         $"{planApprovalStatus}\n", color);
                     index++;
                 }
@@ -197,9 +204,9 @@ namespace ChartCheck
             }
             var planSetup = plans.Single();  // It will throw an exception if there is not exactly one instance.
             Console.Write("Checking plan ");
-            WriteInColor($"\"{planSetup.Id}\"", ConsoleColor.Yellow);
+            WriteInColor($"{planSetup.Id}", ConsoleColor.Yellow);
             Console.Write(" in course ");
-            WriteInColor($"\"{course.Id}\"\n", ConsoleColor.Yellow);
+            WriteInColor($"{course.Id}\n", ConsoleColor.Yellow);
             bool isWorkflowPlan = false;
             try
             {
@@ -268,36 +275,35 @@ namespace ChartCheck
             Console.WriteLine("========= Prescription checks: =========");
             if (rx != null)
             {
-                Console.Write($"Prescription name: ");
-                WriteInColor($"\"{rx.Id}\". ", ConsoleColor.Yellow);
-                Console.Write("Target(s):");
+                Console.Write($"Name: ");
+                WriteInColor($"{rx.Id}. ", ConsoleColor.Yellow);
+                Console.Write("Target(s): ");
                 foreach (var target in rx.Targets)
                 {
-                    WriteInColor($" \"{target.TargetId}\" ({target.DosePerFraction}/fx)", ConsoleColor.Yellow);
+                    WriteInColor($"{target.TargetId} ({target.DosePerFraction}/fx), ", ConsoleColor.Yellow);
                 }
-                Console.WriteLine("");
+                Console.WriteLine("\b\b.");
                 IEnumerable<string> rxDose = rx.Energies;
                 Console.Write($"Mode:");
                 foreach (string s in rx.EnergyModes)
                 {
-                    WriteInColor($" \"{s}\"", ConsoleColor.Yellow);
+                    WriteInColor($" {s}", ConsoleColor.Yellow);
                 }
-                Console.Write(". ");
-                WriteInColor("Energies:");
+                Console.Write(". Energies: ");
                 foreach (string s in rxDose)
                 {
-                    WriteInColor($" \"{s}\".", ConsoleColor.Yellow);
+                    WriteInColor($"{s}, ", ConsoleColor.Yellow);
                 }
-                Console.WriteLine("");
-                Console.Write("Beam energies in the plan:");
+                Console.Write("\b\b. ");
+                Console.Write("Plan beam energies: ");
                 foreach (var beam in planSetup.Beams)
                 {
                     if (beam.IsSetupField == false)
                     {
-                        WriteInColor($" \"{beam.EnergyModeDisplayName}\"", ConsoleColor.Yellow);
+                        WriteInColor($"{beam.EnergyModeDisplayName}, ", ConsoleColor.Yellow);
                     }
                 }
-                Console.WriteLine("");
+                Console.WriteLine("\b\b.");
                 var fx = rx.NumberOfFractions;
                 Console.Write($"No. prescribed fractions: ");
                 WriteInColor($"{fx}", ConsoleColor.Yellow);
@@ -314,7 +320,7 @@ namespace ChartCheck
                 // check session info
                 // These are sessions that are scheduled in Plan Scheduling workspace.
                 int numSessions = planSetup.TreatmentSessions.Count();
-                WriteInColor($"Number of scheduled sessions: ");
+                Console.Write($"Number of scheduled sessions: ");
                 WriteInColor($"{planSetup.TreatmentSessions.Count()} ", ConsoleColor.Yellow);
                 if (numSessions == planSetup.NumberOfFractions)
                 {
@@ -324,17 +330,17 @@ namespace ChartCheck
                 {
                     WriteInColor($"\tERROR: Session check failed.\n", ConsoleColor.Red);
                 }
-                WriteInColor($"Status of sessions: ");
+                Console.Write($"Sessions: ");
                 for(int i = 0; i < planSetup.TreatmentSessions.Count(); i++)
                 {
-                    var color = ConsoleColor.Green;
+                    var color = ConsoleColor.White;
                     if(planSetup.TreatmentSessions.ElementAt(i).Status == TreatmentSessionStatus.Completed)
                     {
                         color = ConsoleColor.Yellow;
                     }
-                    WriteInColor($"{i + 1}, {planSetup.TreatmentSessions.ElementAt(i).Status}.  ", color);
+                    WriteInColor($"{i + 1} {planSetup.TreatmentSessions.ElementAt(i).Status}, ", color);
                 }
-                Console.WriteLine("");
+                Console.WriteLine("\b\b.");
                 var notes = rx.Notes;
                 if (notes.ToLower().Contains("dibh"))
                 {
@@ -476,7 +482,7 @@ namespace ChartCheck
                         couchAngle = 360 - couchAngle;
                     }
                     Console.Write("ID: ");
-                    WriteInColor($"{beam.Id} ", ConsoleColor.Yellow);
+                    WriteInColor(String.Format("{0,-6}", beam.Id), ConsoleColor.Yellow);
                     Console.Write($"Couch at ");
                     WriteInColor(String.Format("{0,-5}", $"{couchAngle}"), ConsoleColor.Yellow);
                     Console.Write($" gantry range: ");
@@ -516,9 +522,9 @@ namespace ChartCheck
                 if (beam.IsSetupField == false)
                 {
                     Console.Write($"ID: ");
-                    WriteInColor($"\"{beam.Id}\"", ConsoleColor.Yellow);
-                    Console.Write(" Name: ");
-                    WriteInColor(String.Format("{0,-25}", $"\"{beam.Name}\" "), ConsoleColor.Yellow);
+                    WriteInColor(String.Format("{0,-6}", beam.Id), ConsoleColor.Yellow);
+                    Console.Write("Name: ");
+                    WriteInColor(String.Format("{0,-25}", $"{beam.Name}"), ConsoleColor.Yellow);
                     double couchAngle = beam.ControlPoints.First().PatientSupportAngle;  // couch angle defined as IEC 61217
                     if (couchAngle != 0)
                     {
@@ -646,7 +652,7 @@ namespace ChartCheck
                 {
                     bool isOrthogonal = false;
                     Console.Write($"Setup beam: ");
-                    WriteInColor(String.Format("{0,-12}", $"\"{beam.Id}\" "), ConsoleColor.Yellow);
+                    WriteInColor(String.Format("{0,-10}", $"{beam.Id} "), ConsoleColor.Yellow);
                     Console.Write($"Gantry angle: ");
                     WriteInColor(String.Format("{0,-5}", $"{beam.ControlPoints[0].GantryAngle} "), ConsoleColor.Yellow);
                     if (beam.Id.ToLower().Contains("ap"))
@@ -778,11 +784,11 @@ namespace ChartCheck
             if (plan.StructureSet != null)
             {
                 var image = plan.StructureSet.Image;
-                WriteInColor($"Slice thickness: ");
+                Console.Write($"Slice thickness: ");
                 WriteInColor($"{image.ZRes} mm.\t", ConsoleColor.Yellow);
-                WriteInColor($"3D image ID: ");
+                Console.Write($"3D image ID: ");
                 WriteInColor($"{image.Id}.\t", ConsoleColor.Yellow);
-                WriteInColor($"Structure set ID: ");
+                Console.Write($"Structure set ID: ");
                 WriteInColor($"{plan.StructureSet.Id}\n", ConsoleColor.Yellow);
                 if (image.Id.ToLower().Contains("ave") || image.Id.ToLower().Contains("-") || image.Id.ToLower().Contains("bh"))
                 {
