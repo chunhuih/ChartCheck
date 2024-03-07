@@ -76,7 +76,7 @@ namespace ChartCheck
             {
                 while (true)
                 {
-                    Console.Write("Please enter the patient ID (Press RETURN to exit): ");
+                    WriteInColor("Please enter the patient ID (Press RETURN to exit): ", ConsoleColor.Cyan);
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     mrn = Console.ReadLine();
                     Console.ResetColor();
@@ -606,6 +606,11 @@ namespace ChartCheck
                         beam.Name.ToLower().Contains("ha") == false)
                     {
                         WriteInColor("Name check failed: missing HA for HyperArc fields.\n", ConsoleColor.Red);
+                        nameCheck = false;
+                    }
+                    if (beam.Name == "")
+                    {
+                        WriteInColor("Name check failed: empty beam name.\n", ConsoleColor.Red);
                         nameCheck = false;
                     }
                     if (nameCheck)
