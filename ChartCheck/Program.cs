@@ -129,7 +129,7 @@ namespace ChartCheck
             List<string> planList = new List<string>();
             WriteInColor($"Index {String.Format("{0,-30}", "Course")} " +
                 $"{String.Format("{0,-20}", "Prescription")} " +
-                $"{String.Format("{0, -20}", "Plan")} Plan approval\n", ConsoleColor.White);
+                $"{String.Format("{0, -20}", "Plan")} Plan approval\n", ConsoleColor.Yellow);
             foreach (Course eachCourse in patient.Courses)
             {
                 foreach (PlanSetup eachPlan in eachCourse.PlanSetups)
@@ -154,7 +154,7 @@ namespace ChartCheck
                     {
                         planApprovalStatus = "N/A: Workflow plan";
                     }
-                    var color = ConsoleColor.White;
+                    var color = ConsoleColor.Yellow;
                     if (rxname == "N/A" || planApprovalStatus == "Rejected" || 
                         planApprovalStatus == PlanSetupApprovalStatus.Completed.ToString() ||
                         planApprovalStatus == PlanSetupApprovalStatus.CompletedEarly.ToString())
@@ -272,6 +272,7 @@ namespace ChartCheck
             // check prescription info.
             bool useDIBH = false;
             bool useEEBH = false;
+            bool inVivoDosimetry = false;
             Console.WriteLine("========= Prescription checks: =========");
             if (rx != null)
             {
@@ -333,15 +334,19 @@ namespace ChartCheck
                 Console.Write($"Sessions: ");
                 for(int i = 0; i < planSetup.TreatmentSessions.Count(); i++)
                 {
-                    var color = ConsoleColor.White;
+                    var color = ConsoleColor.Yellow;
                     if(planSetup.TreatmentSessions.ElementAt(i).Status == TreatmentSessionStatus.Completed)
                     {
-                        color = ConsoleColor.Yellow;
+                        color = ConsoleColor.Green;
                     }
                     WriteInColor($"{i + 1} {planSetup.TreatmentSessions.ElementAt(i).Status}, ", color);
                 }
                 Console.WriteLine("\b\b.");
                 var notes = rx.Notes;
+                if (notes.ToLower().Contains("nanodot") || notes.ToLower().Contains("vivo"))
+                {
+                    inVivoDosimetry = true;
+                }
                 if (notes.ToLower().Contains("dibh"))
                 {
                     useDIBH = true;
@@ -358,6 +363,14 @@ namespace ChartCheck
                 }
                 WriteInColor("Rx notes: ");
                 WriteInColor($"{notes}\n", ConsoleColor.Yellow);
+                if (inVivoDosimetry)
+                {
+                    WriteInColor("In vivo dosimetry is requested.   ", ConsoleColor.Yellow);
+                    var color = Console.BackgroundColor;
+                    Console.BackgroundColor = ConsoleColor.Yellow;
+                    WriteInColor("Verify if the In-Vivo Dosimetry physics task exists.\n", ConsoleColor.Magenta);
+                    Console.BackgroundColor = color;
+                }
             }
             else
             {
@@ -408,6 +421,8 @@ namespace ChartCheck
             bool isSRSARC = false;
             bool isConfARC = false;
             bool isVMAT = false;
+            bool isElectron = false;
+
             foreach (var beam in planSetup.Beams)
             {
                 if (beam.IsSetupField == false)
@@ -431,6 +446,10 @@ namespace ChartCheck
                     if (beam.MLCPlanType.ToString() == "ArcDynamic")
                     {
                         isConfARC = true;
+                    }
+                    if (beam.EnergyModeDisplayName.Contains("E"))
+                    {
+                        isElectron = true;
                     }
                 }
             }
@@ -524,7 +543,7 @@ namespace ChartCheck
                     Console.Write($"ID: ");
                     WriteInColor(String.Format("{0,-6}", beam.Id), ConsoleColor.Yellow);
                     Console.Write("Name: ");
-                    WriteInColor(String.Format("{0,-25}", $"{beam.Name}"), ConsoleColor.Yellow);
+                    WriteInColor(String.Format("{0,-28}", $"{beam.Name}"), ConsoleColor.Yellow);
                     double couchAngle = beam.ControlPoints.First().PatientSupportAngle;  // couch angle defined as IEC 61217
                     if (couchAngle != 0)
                     {
@@ -616,6 +635,25 @@ namespace ChartCheck
                     if (nameCheck)
                     {
                         WriteInColor("Name check passed.\n", ConsoleColor.Green);
+                    }
+                }
+            }
+            if(isElectron)
+            {
+                foreach (var beam in planSetup.Beams)
+                {
+                    if (beam.IsSetupField == false)
+                    {
+                        WriteInColor($"Beam energy: ");
+                        WriteInColor($"{beam.EnergyModeDisplayName}, ", ConsoleColor.Yellow);
+                        WriteInColor($"Applicator: ");
+                        WriteInColor($"{beam.Applicator.Id}, ", ConsoleColor.Yellow);
+                        WriteInColor($"Tray: ");
+                        WriteInColor($"{beam.Trays.First().Id}. ", ConsoleColor.Yellow);
+                        var currentBackgroundColor = Console.BackgroundColor;
+                        Console.BackgroundColor = ConsoleColor.Yellow;
+                        WriteInColor($"Please check cutout FFDA code for the electron beam.\n", ConsoleColor.Magenta);
+                        Console.BackgroundColor = currentBackgroundColor;
                     }
                 }
             }
@@ -778,7 +816,8 @@ namespace ChartCheck
         {
             if (planSetup.StructureSet != null &&
                 planSetup.Id.ToLower().Contains("cw") &&
-                (planSetup.Id.ToLower().Contains("ap") || planSetup.Id.ToLower().Contains("pa")) &&
+                (planSetup.Id.ToLower().Contains("ap") || planSetup.Id.ToLower().Contains("pa")
+                || planSetup.Id.ToLower().Contains("ant") || planSetup.Id.ToLower().Contains("pos")) &&
                 (planSetup.Id.ToLower().Contains("l") || planSetup.Id.ToLower().Contains("r")))
                 return true;
             return false;
@@ -1011,7 +1050,8 @@ namespace ChartCheck
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tSSD: {beam.PlannedSSD} mm\t");
+//                WriteInColor($"\tSSD: {beam.PlannedSSD:n2} mm\t");
+                WriteInColor(string.Format("\tSSD: {0:0} mm\t", beam.PlannedSSD));
                 if (beam.PlannedSSD.ToString("n0") != "1000")
                 {
                     WriteInColor($"ERROR: wrong SSD.\n", ConsoleColor.Red);
@@ -1064,7 +1104,11 @@ namespace ChartCheck
                 }
                 else
                 {
-                    WriteInColor($"Number of trays = 1: Pass.\n", ConsoleColor.Green);
+                    WriteInColor($"Number of trays = 1: Pass.\t", ConsoleColor.Green);
+                    var currentBackgroundColor = Console.BackgroundColor;
+                    Console.BackgroundColor = ConsoleColor.Yellow;
+                    WriteInColor($"Please check cutout FFDA code for the electron beam.\n", ConsoleColor.Magenta);
+                    Console.BackgroundColor = currentBackgroundColor;
                 }
                 WriteInColor($"\tApplicator: {beam.Applicator.Id}\n");
                 WriteInColor($"\tX1: {jawX1} X2: {jawX2} Y1: {jawY1} Y2: {jawY2}\n");
