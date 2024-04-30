@@ -557,6 +557,7 @@ namespace ChartCheck
                         couchAngle = 360 - couchAngle;
                     }
                     double gantryAngle = beam.ControlPoints.First().GantryAngle;
+                    bool nameCheck = true;
                     if (is3D && beam.Name.ToLower().Contains("lao") &&
                         (couchAngle >= 350 || couchAngle <= 10))
                     {
@@ -564,7 +565,8 @@ namespace ChartCheck
                         {
                             if (gantryAngle >= 90)
                             {
-                                WriteInColor("Name checked failed: \"LAO\".\n", ConsoleColor.Red);
+                                WriteInColor("Wrong label: \"LAO\".   ", ConsoleColor.Red);
+                                nameCheck = false;
                             }
                         }
                     }
@@ -575,7 +577,8 @@ namespace ChartCheck
                         {
                             if (gantryAngle <= 90 || gantryAngle >= 180)
                             {
-                                WriteInColor("Name checked failed: \"LPO\".\n", ConsoleColor.Red);
+                                WriteInColor("Wrong label: \"LPO\".   ", ConsoleColor.Red);
+                                nameCheck = false;
                             }
                         }
                     }
@@ -586,7 +589,8 @@ namespace ChartCheck
                         {
                             if (gantryAngle <= 270)
                             {
-                                WriteInColor("Name checked failed: \"RAO\".\n", ConsoleColor.Red);
+                                WriteInColor("Wrong label: \"RAO\".   ", ConsoleColor.Red);
+                                nameCheck = false;
                             }
                         }
                     }
@@ -597,51 +601,55 @@ namespace ChartCheck
                         {
                             if (gantryAngle >= 270 || gantryAngle <= 180)
                             {
-                                WriteInColor("Name checked failed: \"RPO\".\n", ConsoleColor.Red);
+                                WriteInColor("Wrong label: \"RPO\".   ", ConsoleColor.Red);
+                                nameCheck = false;
                             }
                         }
                     }
-                    bool nameCheck = true;
                     if (rx != null && rx.Notes.ToLower().Contains("bolus") && !beam.Name.ToLower().Contains("wb") && !rx.Notes.ToLower().Contains("no bolus"))
                     {
-                        WriteInColor("Name checked failed: missing bolus label.\n", ConsoleColor.Red);
+                        WriteInColor("Missing bolus label.   ", ConsoleColor.Red);
                         nameCheck = false;
                     }
                     if (rx != null && (rx.Notes.ToLower().Contains("eebh") &&
                         !beam.Name.ToLower().Contains("eebh")))
                     {
-                        WriteInColor("Name checked failed: missing EEBH (end of expiration breath hold) label.\n", ConsoleColor.Red);
+                        WriteInColor("Missing EEBH (end of expiration breath hold) label.   ", ConsoleColor.Red);
                         nameCheck = false;
                     }
                     if (rx != null && useDIBH && !beam.Name.ToLower().Contains("bh"))
                     {
-                        WriteInColor("Name checked failed: missing BH label for DIBH treatments.\n", ConsoleColor.Red);
+                        WriteInColor("Missing BH label for DIBH treatments.   ", ConsoleColor.Red);
                         nameCheck = false;
                     }
                     if (rx != null && useDIBH && beam.Name.ToLower().Contains("eebh"))
                     {
-                        WriteInColor("Name checked failed: using EEBH instead of BH (for deep inspiration breath hold) label.\n", ConsoleColor.Red);
+                        WriteInColor("Using EEBH instead of BH (for deep inspiration breath hold) label.   ", ConsoleColor.Red);
                         nameCheck = false;
                     }
                     if (rx != null && useEEBH && !beam.Name.ToLower().Contains("eebh"))
                     {
-                        WriteInColor("Name checked failed: missing EEBH label.\n", ConsoleColor.Red);
+                        WriteInColor("Missing EEBH label.\n", ConsoleColor.Red);
                         nameCheck = false;
                     }
                     if (rx != null && (rx.Notes.ToLower().Contains("hyperarc") || rx.Notes.ToLower().Contains("hyper arc")) &&
                         beam.Name.ToLower().Contains("ha") == false)
                     {
-                        WriteInColor("Name check failed: missing HA for HyperArc fields.\n", ConsoleColor.Red);
+                        WriteInColor("Missing HA for HyperArc fields.   ", ConsoleColor.Red);
                         nameCheck = false;
                     }
                     if (beam.Name == "")
                     {
-                        WriteInColor("Name check failed: empty beam name.\n", ConsoleColor.Red);
+                        WriteInColor("Empty beam name.   ", ConsoleColor.Red);
                         nameCheck = false;
                     }
                     if (nameCheck)
                     {
                         WriteInColor("Name check passed.\n", ConsoleColor.Green);
+                    }
+                    else
+                    {
+                        WriteInColor("\r\r\r\n");
                     }
                 }
             }
@@ -664,8 +672,24 @@ namespace ChartCheck
                     }
                 }
             }
+            // Check machine used:
+            List<string> machines = new List<string>();
+            foreach (var beam in planSetup.Beams)
+            {
+                string machine = beam.TreatmentUnit.Name;
+                if (machines.Contains(machine) == false)
+                {
+                    machines.Add(machine);
+                }
+            }
             // Check tolerance table settings
             List<string> toleranceTableList = new List<string>();
+            WriteInColor("Treatment unit: ");
+            foreach (var machine in machines)
+            {
+                WriteInColor($"{machine}\t", ConsoleColor.Yellow);
+            }
+            WriteInColor("\n");
             foreach (var beam in planSetup.Beams)
             {
                 string toleranceTableLabel = beam.ToleranceTableLabel;
@@ -808,15 +832,7 @@ namespace ChartCheck
         static bool IsConventionalTBI(PlanSetup planSetup)
         {
             if (planSetup.StructureSet == null &&
-                (planSetup.Id.ToLower() == "tbi" ||
-                planSetup.Id.ToLower().Contains("tbi body") ||
-                planSetup.Id.ToLower() == "tbi tb-1" ||
-                planSetup.Id.ToLower() == "tbi tb1" ||
-                planSetup.Id.ToLower() == "tbi tb-stx" ||
-                planSetup.Id.ToLower() == "tbi tbx" ||
-                planSetup.Id.ToLower() == "tbi body" ||
-                planSetup.Id.ToLower() == "ap tbi" ||
-                planSetup.Id.ToLower() == "pa tbi"))
+                planSetup.Id.ToLower().Contains("tbi"))
                 return true;
             return false;
         }

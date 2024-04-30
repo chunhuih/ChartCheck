@@ -48,13 +48,13 @@ namespace ChartCheck.Core
                 GetPatientClinicalConceptsResponse getPatientClinicalConceptsResponse = JsonConvert.DeserializeObject<GetPatientClinicalConceptsResponse>(response);
                 foreach (var concept in getPatientClinicalConceptsResponse.PatientClinicalConcepts)
                 {
-                    Console.WriteLine($"course: {concept.CourseId.Value} Rx name: {concept.PrescriptionName.Value}");
-                    WriteInColor($"Energy: ");
-                    WriteInColor($"{concept.Energy.Value}\n", ConsoleColor.Yellow);
-                    WriteInColor($"Number of fractions: ");
-                    WriteInColor($"{concept.NumberOfFractions.Value} ", ConsoleColor.Yellow);
-                    WriteInColor(" frequency: ");
-                    WriteInColor($"{concept.Frequency.Value}\n", ConsoleColor.Yellow);
+                    WriteInColor($"=== course: ");
+                    WriteInColor($"{concept.CourseId.Value} ", ConsoleColor.Yellow);
+                    WriteInColor("Rx name: ");
+                    WriteInColor($"{concept.PrescriptionName.Value} ", ConsoleColor.Yellow);
+                    WriteInColor("Rx status: ");
+                    WriteInColor($"{concept.Status.Value} ", ConsoleColor.Yellow);
+                    WriteInColor($"===\n");
                     foreach (var info in concept.PrescriptionVolumeInfo)
                     {
                         WriteInColor($"Target: ");
@@ -64,15 +64,24 @@ namespace ChartCheck.Core
                         WriteInColor($" total dose: ");
                         WriteInColor($"{info.TotalDose.Value} Gy\n", ConsoleColor.Yellow);
                     }
+                    WriteInColor($"Number of fractions: ");
+                    WriteInColor($"{concept.NumberOfFractions.Value} ", ConsoleColor.Yellow);
+                    WriteInColor(" frequency: ");
+                    WriteInColor($"{concept.Frequency.Value} ", ConsoleColor.Yellow);
+                    WriteInColor($"Energy: ");
+                    WriteInColor($"{concept.Energy.Value}\n", ConsoleColor.Yellow);
                     WriteInColor($"Plans: ");
                     WriteInColor($"{concept.Plans.Value}\n", ConsoleColor.Yellow);
+                    WriteInColor("Rx notes: ");
+                    WriteInColor($"{concept.Notes.Value}\n", ConsoleColor.Yellow);
                 }
             }
             return;
         }
             public static void CheckTBIPlan(ESAPI.PlanSetup planSetup)
         {
-            WriteInColor($"Checking TBI plan: {planSetup.Id}\n");
+            WriteInColor($"Checking TBI plan: ");
+            WriteInColor($"{planSetup.Id}\n", ConsoleColor.Yellow);
             foreach (var beam in planSetup.Beams)
             {
                 double GantryAngle = beam.ControlPoints.First().GantryAngle;
@@ -82,12 +91,16 @@ namespace ChartCheck.Core
                 double jawX2 = beam.ControlPoints.First().JawPositions.X2;
                 double jawY1 = beam.ControlPoints.First().JawPositions.Y1;
                 double jawY2 = beam.ControlPoints.First().JawPositions.Y2;
-                WriteInColor($"Beam \"{beam.Id}\" \"{beam.Name}\":\n");
+                WriteInColor($"Beam ID: ");
+                WriteInColor($"{beam.Id} ", ConsoleColor.Yellow);
+                WriteInColor($"name: ");
+                WriteInColor($"{beam.Name}:\n", ConsoleColor.Yellow);
                 if (beam.ControlPoints.Count() > 2)
                 {
                     WriteInColor("ERROR: not a static field. \n", ConsoleColor.Red);
                 }
-                WriteInColor($"\tTreatment unit: {beam.TreatmentUnit.Id}\t");
+                WriteInColor(string.Format("{0,-16} ", "Treatment unit: "));
+                WriteInColor(string.Format("{0,-10} ", beam.TreatmentUnit.Id), ConsoleColor.Yellow);
                 if (beam.TreatmentUnit.Id != "TrueBeam1" && beam.TreatmentUnit.Id != "TrueBeamSTX")
                 {
                     WriteInColor($"ERROR: wrong unit.\n", ConsoleColor.Red);
