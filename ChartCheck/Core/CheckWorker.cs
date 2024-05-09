@@ -288,13 +288,29 @@ namespace ChartCheck.Core
                 }
                 WriteInColor("Collimator: ");
                 WriteInColor($"{collimatorAngle}\t", ConsoleColor.Yellow);
-                if (collimatorAngle != 315)
+                if (planSetup.Id.ToLower().Contains("ap") || planSetup.Id.ToLower().Contains("ant") ||
+                    beam.Name.ToLower().Contains("ap") || beam.Name.ToLower().Contains("ant"))
                 {
-                    WriteInColor($"ERROR: wrong collimator angle.\n", ConsoleColor.Red);
+                    if (collimatorAngle != 315)
+                    {
+                        WriteInColor($"ERROR: wrong collimator angle.\n", ConsoleColor.Red);
+                    }
+                    else
+                    {
+                        WriteInColor($"Pass.\n", ConsoleColor.Green);
+                    }
                 }
-                else
+                if (planSetup.Id.ToLower().Contains("pa") || planSetup.Id.ToLower().Contains("pos") ||
+                    beam.Name.ToLower().Contains("pa") || beam.Name.ToLower().Contains("pos"))
                 {
-                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                    if (collimatorAngle != 135)
+                    {
+                        WriteInColor($"ERROR: wrong collimator angle.\n", ConsoleColor.Red);
+                    }
+                    else
+                    {
+                        WriteInColor($"Pass.\n", ConsoleColor.Green);
+                    }
                 }
                 WriteInColor("Couch angle: ");
                 WriteInColor($"{couchAngle}\t", ConsoleColor.Yellow);
