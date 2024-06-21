@@ -19,13 +19,13 @@ namespace ChartCheck
         [STAThread]
         static void Main(string[] args)
         {
-            string logName = System.AppDomain.CurrentDomain.FriendlyName + ".log";
-            using (StreamWriter w = File.CreateText(logName))
-            {
-                w.AutoFlush = true;
-                string log = "Start of the app: " + System.AppDomain.CurrentDomain.FriendlyName;
-                Log(log, w);
-            }
+            //string logName = System.AppDomain.CurrentDomain.FriendlyName + ".log";
+            //using (StreamWriter w = File.CreateText(logName))
+            //{
+            //    w.AutoFlush = true;
+            //    string log = "Start of the app: " + System.AppDomain.CurrentDomain.FriendlyName;
+            //    Log(log, w);
+            //}
             Console.SetWindowSize(120, 60);
             try
             {
@@ -36,21 +36,22 @@ namespace ChartCheck
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine($"Exception: {e}");
+                //Console.Error.WriteLine($"Exception: {e}");
+                Console.Error.WriteLine($"Unable to establish connection to Eclipse. Please ensure that you are running this app in an Eclipse environment.");
             }
-            using (StreamWriter w = File.AppendText(logName))
-            {
-                w.AutoFlush = true;
-                string log = "End of the app: " + System.AppDomain.CurrentDomain.FriendlyName;
-                Log(log, w);
-            }
+            //using (StreamWriter w = File.AppendText(logName))
+            //{
+            //    w.AutoFlush = true;
+            //    string log = "End of the app: " + System.AppDomain.CurrentDomain.FriendlyName;
+            //    Log(log, w);
+            //}
         }
-        public static void Log(string logMessage, TextWriter w)
-        {
-            // The $ symbol before the quotation mark creates an interpolated string.
-            w.Write($"{DateTime.Now.ToLongTimeString()} {DateTime.Now.ToLongDateString()}");
-            w.WriteLine($": {logMessage}");
-        }
+        //public static void Log(string logMessage, TextWriter w)
+        //{
+        //    // The $ symbol before the quotation mark creates an interpolated string.
+        //    w.Write($"{DateTime.Now.ToLongTimeString()} {DateTime.Now.ToLongDateString()}");
+        //    w.WriteLine($": {logMessage}");
+        //}
         public static void WriteInColor(string s, ConsoleColor color = ConsoleColor.Gray)
         {
             Console.ForegroundColor = color;
@@ -124,7 +125,6 @@ namespace ChartCheck
                 WriteInColor("Please choose another patient with existing plans and run this application again.\n", ConsoleColor.Red);
                 return;
             }
-            Console.WriteLine("Please choose a treatment plan from the list below:");
             int index = 0;
             List<string> courseList = new List<string>();
             List<string> planList = new List<string>();
@@ -141,7 +141,7 @@ namespace ChartCheck
                     string planApprovalStatus = PlanSetupApprovalStatus.Unknown.ToString();
                     try
                     {
-                        rxname = eachPlan.RTPrescription != null ? eachPlan.RTPrescription.Name : "N/A";
+                        rxname = eachPlan.RTPrescription != null ? eachPlan.RTPrescription.Name : "(None)";
                     }
                     catch
                     {
@@ -153,10 +153,10 @@ namespace ChartCheck
                     }
                     catch
                     {
-                        planApprovalStatus = "N/A: Workflow plan";
+                        planApprovalStatus = "(Workflow plan)";
                     }
                     var color = ConsoleColor.Yellow;
-                    if (rxname == "N/A" || planApprovalStatus == "Rejected" || 
+                    if (rxname == "(None)" || planApprovalStatus == "Rejected" || 
                         planApprovalStatus == PlanSetupApprovalStatus.Completed.ToString() ||
                         planApprovalStatus == PlanSetupApprovalStatus.CompletedEarly.ToString())
                     {
@@ -170,7 +170,7 @@ namespace ChartCheck
                     index++;
                 }
             }
-            Console.Write("First please enter the index listed above for your plan to check: ");
+            Console.Write("Please enter the index listed above for your plan to check: ");
             Console.ForegroundColor = ConsoleColor.Yellow;
             string indx_selected = Console.ReadLine();
             Console.ResetColor();
@@ -322,28 +322,30 @@ namespace ChartCheck
                 }
                 // check session info
                 // These are sessions that are scheduled in Plan Scheduling workspace.
+                Console.Write("Frequency: ");
+                WriteInColor($"{CheckWorker.GetFrequencyFromAria(mrn, planSetup)}  ", ConsoleColor.Yellow);
                 int numSessions = planSetup.TreatmentSessions.Count();
                 Console.Write($"Number of scheduled sessions: ");
                 WriteInColor($"{planSetup.TreatmentSessions.Count()} ", ConsoleColor.Yellow);
                 if (numSessions == planSetup.NumberOfFractions)
                 {
                     WriteInColor($"\tSession check passed.\n", ConsoleColor.Green);
-                    Console.Write($"Sessions: ");
-                    for (int i = 0; i < planSetup.TreatmentSessions.Count(); i++)
-                    {
-                        var color = ConsoleColor.Yellow;
-                        if (planSetup.TreatmentSessions.ElementAt(i).Status == TreatmentSessionStatus.Completed)
-                        {
-                            color = ConsoleColor.Green;
-                        }
-                        WriteInColor($"{i + 1} {planSetup.TreatmentSessions.ElementAt(i).Status}, ", color);
-                    }
-                    Console.WriteLine("\b\b.");
                 }
                 else
                 {
                     WriteInColor($"\tERROR: Session check failed.\n", ConsoleColor.Red);
                 }
+                Console.Write($"Sessions: ");
+                for (int i = 0; i < planSetup.TreatmentSessions.Count(); i++)
+                {
+                    var color = ConsoleColor.Yellow;
+                    if (planSetup.TreatmentSessions.ElementAt(i).Status == TreatmentSessionStatus.Completed)
+                    {
+                        color = ConsoleColor.Green;
+                    }
+                    WriteInColor($"{i + 1} {planSetup.TreatmentSessions.ElementAt(i).Status}, ", color);
+                }
+                Console.WriteLine("\b\b.");
                 var notes = rx.Notes;
                 if (notes.ToLower().Contains("nanodot") || notes.ToLower().Contains("vivo"))
                 {
@@ -423,20 +425,45 @@ namespace ChartCheck
             }
             Console.WriteLine("========= Tx field checks: =========");
             // check the treatment plan type: VMAT, Conformal ARC, SRS, Field-in-field, etc.
+            bool optimized = false;
             bool is3D = false;
+            bool isStaticIMRT = false;
             bool isARC = false;
             bool isSRSARC = false;
             bool isConfARC = false;
             bool isVMAT = false;
             bool isElectron = false;
 
+            if(planSetup.OptimizationSetup == null)
+            {
+                optimized = false;
+            }
+            else
+            {
+                optimized = true;
+            }
             foreach (var beam in planSetup.Beams)
             {
                 if (beam.IsSetupField == false)
                 {
                     if (beam.Technique.ToString() == "STATIC")
                     {
-                        is3D = true;
+                        if (optimized)
+                        {
+                            var objs = planSetup.OptimizationSetup.Objectives;
+                            if (objs.Count() == 0)
+                            {
+                                is3D = true;
+                            }
+                            else
+                            {
+                                isStaticIMRT = true;
+                            }
+                        }
+                        else
+                        {
+                            is3D = true;
+                        }
                     }
                     if (beam.Technique.ToString() == "ARC")
                     {
@@ -463,6 +490,10 @@ namespace ChartCheck
             if (is3D)
             {
                 WriteInColor($"3D plan.\n", ConsoleColor.Yellow);
+            }
+            if (isStaticIMRT)
+            {
+                WriteInColor($"Static field IMRT plan.\n", ConsoleColor.Yellow);
             }
             if (isARC)
             {

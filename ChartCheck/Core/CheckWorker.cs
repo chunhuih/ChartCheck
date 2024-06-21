@@ -48,37 +48,108 @@ namespace ChartCheck.Core
                 GetPatientClinicalConceptsResponse getPatientClinicalConceptsResponse = JsonConvert.DeserializeObject<GetPatientClinicalConceptsResponse>(response);
                 foreach (var concept in getPatientClinicalConceptsResponse.PatientClinicalConcepts)
                 {
-                    WriteInColor($"=== course: ");
-                    WriteInColor($"{concept.CourseId.Value} ", ConsoleColor.Yellow);
-                    WriteInColor("Rx name: ");
-                    WriteInColor($"{concept.PrescriptionName.Value} ", ConsoleColor.Yellow);
-                    WriteInColor("Rx status: ");
-                    WriteInColor($"{concept.Status.Value} ", ConsoleColor.Yellow);
-                    WriteInColor($"===\n");
-                    foreach (var info in concept.PrescriptionVolumeInfo)
+                    if (concept.Plans.Value != null && concept.Plans.Value.Contains(planSetup.Id))
                     {
-                        WriteInColor($"Target: ");
-                        WriteInColor($"{info.StructureName.Value} ", ConsoleColor.Yellow);
-                        WriteInColor($" Dose/fx: ");
-                        WriteInColor($"{info.DosePerFraction.Value} Gy", ConsoleColor.Yellow);
-                        WriteInColor($" total dose: ");
-                        WriteInColor($"{info.TotalDose.Value} Gy\n", ConsoleColor.Yellow);
+                        WriteInColor($"=== course: ");
+                        WriteInColor($"{concept.CourseId.Value} ", ConsoleColor.Yellow);
+                        WriteInColor("Rx name: ");
+                        WriteInColor($"{concept.PrescriptionName.Value} ", ConsoleColor.Yellow);
+                        WriteInColor("Rx status: ");
+                        WriteInColor($"{concept.Status.Value} ", ConsoleColor.Yellow);
+                        WriteInColor($"===\n");
+                        foreach (var info in concept.PrescriptionVolumeInfo)
+                        {
+                            WriteInColor($"Target: ");
+                            WriteInColor($"{string.Format("{0,-16}", info.StructureName.Value)} ", ConsoleColor.Yellow);
+                            WriteInColor($" Dose/fx: ");
+                            WriteInColor($"{string.Format("{0,-4}", info.DosePerFraction.Value)} Gy", ConsoleColor.Yellow);
+                            WriteInColor($" total dose: ");
+                            WriteInColor($"{info.TotalDose.Value} Gy\n", ConsoleColor.Yellow);
+                        }
+                        WriteInColor($"Number of fractions: ");
+                        WriteInColor($"{concept.NumberOfFractions.Value} ", ConsoleColor.Yellow);
+                        WriteInColor(" frequency: ");
+                        WriteInColor($"{concept.Frequency.Value} ", ConsoleColor.Yellow);
+                        WriteInColor($"Energy: ");
+                        WriteInColor($"{concept.Energy.Value}\n", ConsoleColor.Yellow);
+                        WriteInColor($"Plans: ");
+                        WriteInColor($"{concept.Plans.Value}\n", ConsoleColor.Yellow);
+                        WriteInColor("Rx notes: ");
+                        WriteInColor($"{concept.Notes.Value}\n", ConsoleColor.Yellow);
+
+                        GetPatientPlanSetupsRequest getPatientPlanSetupsRequest = new GetPatientPlanSetupsRequest
+                        {
+                            PatientId = new VMSType.String { Value = MRN },
+                            CourseId = courses.CourseId
+                        };
+                        string requestPatientPlanSetups = $"{{\"__type\":\"GetPatientPlanSetupsRequest:http://services.varian.com/AriaWebConnect/Link\", {JsonConvert.SerializeObject(getPatientPlanSetupsRequest).TrimStart('{')}}}";
+                        response = SendData(requestPatientPlanSetups, true, apiKey);
+                        if (response.ToLower().Contains("syntax error"))
+                        {
+                            Console.WriteLine("Syntax error was found in the prescription query. Please check prescriptions directly.");
+                            break;
+                        }
+                        GetPatientPlanSetupsResponse getPatientPlanSetupsResponse = JsonConvert.DeserializeObject<GetPatientPlanSetupsResponse>(response);
+                        foreach(var plan in getPatientPlanSetupsResponse.PlanSetups)
+                        {
+                            if(plan.PlanSetupId.Value == planSetup.Id)
+                            {
+                                WriteInColor($"Plan ID: ");
+                                WriteInColor($"{plan.PlanSetupId.Value} ",ConsoleColor.Yellow);
+                                WriteInColor($"Plan name: ");
+                                WriteInColor($"{plan.PlanSetupName.Value} ", ConsoleColor.Yellow);
+                                WriteInColor($"Status: ");
+                                WriteInColor($"{plan.ApprovalStatus.Value} ", ConsoleColor.Yellow);
+                                WriteInColor($"by ");
+                                WriteInColor($"{plan.ApprovedBy.Value} ", ConsoleColor.Yellow);
+                                WriteInColor($"on ");
+                                WriteInColor($"{plan.ApprovalDate.Value.Substring(0, plan.ApprovalDate.Value.Length - 6)}\n", ConsoleColor.Yellow);
+                            }
+                        }
                     }
-                    WriteInColor($"Number of fractions: ");
-                    WriteInColor($"{concept.NumberOfFractions.Value} ", ConsoleColor.Yellow);
-                    WriteInColor(" frequency: ");
-                    WriteInColor($"{concept.Frequency.Value} ", ConsoleColor.Yellow);
-                    WriteInColor($"Energy: ");
-                    WriteInColor($"{concept.Energy.Value}\n", ConsoleColor.Yellow);
-                    WriteInColor($"Plans: ");
-                    WriteInColor($"{concept.Plans.Value}\n", ConsoleColor.Yellow);
-                    WriteInColor("Rx notes: ");
-                    WriteInColor($"{concept.Notes.Value}\n", ConsoleColor.Yellow);
                 }
             }
             return;
         }
-            public static void CheckTBIPlan(ESAPI.PlanSetup planSetup)
+        public static string GetFrequencyFromAria(string MRN, ESAPI.PlanSetup planSetup)
+        {
+            string frequencyData = "<N/A>";
+            string apiKey = "8c2b663e-cc05-4e8b-b988-38900d5a3649";
+            GetPatientCoursesAndPlanSetupsRequest getPatientCoursesAndPlanSetupsRequest = new GetPatientCoursesAndPlanSetupsRequest
+            {
+                PatientId = new VMSType.String { Value = MRN },
+                TreatmentType = new VMSType.String { Value = "Linac" },
+            };
+            string request = $"{{\"__type\":\"GetPatientCoursesAndPlanSetupsRequest:http://services.varian.com/AriaWebConnect/Link\", {JsonConvert.SerializeObject(getPatientCoursesAndPlanSetupsRequest).TrimStart('{')}}}";
+            string response = SendData(request, true, apiKey);
+            GetPatientCoursesAndPlanSetupsResponse getPatientCoursesAndPlanSetupsResponse = JsonConvert.DeserializeObject<GetPatientCoursesAndPlanSetupsResponse>(response);
+            foreach (var courses in getPatientCoursesAndPlanSetupsResponse.PatientCourses)
+            {
+                GetPatientClinicalConceptsRequest getPatientClinicalConceptsRequest = new GetPatientClinicalConceptsRequest
+                {
+                    PatientId = new VMSType.String { Value = MRN },
+                    CourseId = courses.CourseId
+                };
+                string requestClinicalConcepts = $"{{\"__type\":\"GetPatientClinicalConceptsRequest:http://services.varian.com/AriaWebConnect/Link\", {JsonConvert.SerializeObject(getPatientClinicalConceptsRequest).TrimStart('{')}}}";
+                response = SendData(requestClinicalConcepts, true, apiKey);
+                if (response.ToLower().Contains("syntax error"))
+                {
+                    Console.WriteLine("Syntax error was found in the prescription query. Please check prescriptions directly.");
+                    break;
+                }
+                GetPatientClinicalConceptsResponse getPatientClinicalConceptsResponse = JsonConvert.DeserializeObject<GetPatientClinicalConceptsResponse>(response);
+                foreach (var concept in getPatientClinicalConceptsResponse.PatientClinicalConcepts)
+                {
+                    if (concept.CourseId.Value == planSetup.Course.Id && concept.PrescriptionName.Value == planSetup.RTPrescription.Id)
+                    {
+                        frequencyData = concept.Frequency.Value;
+                    }
+                }
+            }
+            return frequencyData;
+        }
+
+        public static void CheckTBIPlan(ESAPI.PlanSetup planSetup)
         {
             WriteInColor($"Checking TBI plan: ");
             WriteInColor($"{planSetup.Id}\n", ConsoleColor.Yellow);
@@ -391,8 +462,15 @@ namespace ChartCheck.Core
                     Console.BackgroundColor = currentBackgroundColor;
                 }
                 WriteInColor("Applicator: ");
-                WriteInColor($"{beam.Applicator.Id}\n", ConsoleColor.Yellow);
-                WriteInColor($"X1: {jawX1} X2: {jawX2} Y1: {jawY1} Y2: {jawY2}\n");
+                WriteInColor($"{beam.Applicator.Id}\t", ConsoleColor.Yellow);
+                WriteInColor($"Jaws: X1 = ");
+                WriteInColor($"{jawX1} mm", ConsoleColor.Yellow);
+                WriteInColor($" X2 = ");
+                WriteInColor($"{jawX2} mm", ConsoleColor.Yellow);
+                WriteInColor($" Y1 = ");
+                WriteInColor($"{jawY1} mm", ConsoleColor.Yellow);
+                WriteInColor($" Y2 = ");
+                WriteInColor($"{jawY2} mm\n", ConsoleColor.Yellow);
             }
         }
         public static void CheckTBITesticularBoost(ESAPI.PlanSetup planSetup)
@@ -566,6 +644,10 @@ namespace ChartCheck.Core
                     {
                         WriteInColor("Gating is not used. Please verify.\n", ConsoleColor.Yellow);
                     }
+                }
+                if (image.Id.ToLower().Contains("plan") == false)
+                {
+                    WriteInColor("Image ID is missing \"PLAN\".\n", ConsoleColor.Red);
                 }
             }
             else
