@@ -27,17 +27,23 @@ namespace ChartCheck
             //    Log(log, w);
             //}
             Console.SetWindowSize(120, 60);
+            Application app = null;
             try
             {
-                using (Application app = Application.CreateApplication())
-                {
-                    Execute(app);
-                }
+                app = Application.CreateApplication();
             }
             catch (Exception e)
             {
                 //Console.Error.WriteLine($"Exception: {e}");
                 Console.Error.WriteLine($"Unable to establish connection to Eclipse. Please ensure that you are running this app in an Eclipse environment.");
+            }
+            if (args.Length > 0)
+            {
+                Execute(app, args[0]);
+            }
+            else
+            {
+                Execute(app, String.Empty);
             }
             //using (StreamWriter w = File.AppendText(logName))
             //{
@@ -58,7 +64,7 @@ namespace ChartCheck
             Console.Write(s);
             Console.ResetColor();
         }
-        static void Execute(Application app)
+        static void Execute(Application app, string arg)
         {
             // string logName = System.AppDomain.CurrentDomain.FriendlyName + ".log";
             // Console.Clear();
@@ -67,8 +73,8 @@ namespace ChartCheck
             WriteInColor("=========================================================================\n", ConsoleColor.Gray);
 
             string automationPredicate = ConfigurationManager.AppSettings.Get("Automation");
-            string mrn;
-            if (automationPredicate != null && automationPredicate.ToLower() == "t")
+            string mrn = string.Empty;
+            if (arg == string.Empty && automationPredicate != null && automationPredicate.ToLower() == "t")
             {
                 mrn = ConfigurationManager.AppSettings.Get("MRN");
                 Console.WriteLine($"MRN was read from the configuration file: {mrn}");
@@ -76,16 +82,23 @@ namespace ChartCheck
             }
             else
             {
+                if(arg != string.Empty)
+                {
+                    mrn = arg;
+                }
                 while (true)
                 {
+                    if (mrn != string.Empty)
+                    {
+                        CheckWorker.CheckThisPatient(mrn, app);
+                        app.ClosePatient();
+                    }
                     WriteInColor("Please enter the patient ID (Press RETURN to exit): ", ConsoleColor.Cyan);
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     mrn = Console.ReadLine();
                     Console.ResetColor();
                     if (mrn == "")
                         return;
-                    CheckWorker.CheckThisPatient(mrn, app);
-                    app.ClosePatient();
                 }
             }
         }

@@ -151,7 +151,7 @@ namespace ChartCheck.Core
             {
                 isWorkflowPlan = true;
                 WriteInColor("This is a workflow plan.\n", ConsoleColor.Yellow);
-                CheckWorker.CheckWorkflowPlan(mrn, planSetup);
+                CheckWorkflowPlan(mrn, planSetup);
                 return;
             }
             if (isWorkflowPlan == false && planSetup.PlanType != PlanType.ExternalBeam)
@@ -172,11 +172,10 @@ namespace ChartCheck.Core
             if (numValidBeams == 0)
             {
                 WriteInColor($"Warning: The plan has no treatment beams.\n", ConsoleColor.Yellow);
-                CheckWorker.ImageChecks(planSetup);
+                ImageChecks(planSetup);
                 return;
             }
             StandardPlanChecks(planSetup);
-            Console.WriteLine("========= Completion of checks =========\n");
         }
         static void CheckWorkflowPlan(string MRN, ESAPI.PlanSetup planSetup)
         {
@@ -267,6 +266,7 @@ namespace ChartCheck.Core
                     }
                 }
             }
+            Console.WriteLine("========= Completion of checks =========\n");
             return;
         }
         static void StandardPlanChecks(ESAPI.PlanSetup planSetup)
@@ -412,20 +412,19 @@ namespace ChartCheck.Core
             }
             if (IsConventionalTBI(planSetup))
             {
-                CheckWorker.CheckTBIPlan(planSetup);
+                CheckTBIPlan(planSetup);
                 return;
             }
             if (IsConventionalTBICW(planSetup))
             {
-                CheckWorker.CheckTBIPlanCW(planSetup);
+                CheckTBIPlanCW(planSetup);
                 return;
             }
             if (IsConventionalTBITesticularBoost(planSetup))
             {
-                CheckWorker.CheckTBITesticularBoost(planSetup);
+                CheckTBITesticularBoost(planSetup);
                 return;
             }
-            ImageChecks(planSetup);
             // If the plan is based on 3D images, check treatment plan settings.
             Console.WriteLine("========= Treatment plan setting checks: =========");
             var calcModel = planSetup.PhotonCalculationModel;
@@ -890,6 +889,19 @@ namespace ChartCheck.Core
                     Console.ResetColor();
                 }
             }
+            Console.WriteLine("========= Reference point checks: =========");
+            Console.Write("Primary reference point ID: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.Id}  ", ConsoleColor.Yellow);
+            Console.Write("Physics point (True/False): ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.HasLocation(planSetup)}\n", ConsoleColor.Yellow);
+            Console.Write("Dose limits defined for session: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.SessionDoseLimit.Dose} {planSetup.PrimaryReferencePoint.SessionDoseLimit.Unit}; ", ConsoleColor.Yellow);
+            Console.Write("for daily: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.DailyDoseLimit.Dose} {planSetup.PrimaryReferencePoint.DailyDoseLimit.Unit}; ", ConsoleColor.Yellow);
+            Console.Write("for total: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.TotalDoseLimit.Dose} {planSetup.PrimaryReferencePoint.TotalDoseLimit.Unit}\n", ConsoleColor.Yellow);
+            ImageChecks(planSetup);
+            Console.WriteLine("========= Completion of checks =========\n");
         }
         static string GetFrequencyFromAria(string MRN, ESAPI.PlanSetup planSetup)
         {
@@ -1077,6 +1089,7 @@ namespace ChartCheck.Core
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
             }
+            Console.WriteLine("========= Completion of checks =========\n");
         }
         static void CheckTBIPlanCW(ESAPI.PlanSetup planSetup)
         {
@@ -1252,6 +1265,7 @@ namespace ChartCheck.Core
                 WriteInColor($" Y2 = ");
                 WriteInColor($"{jawY2} mm\n", ConsoleColor.Yellow);
             }
+            Console.WriteLine("========= Completion of checks =========\n");
         }
         static void CheckTBITesticularBoost(ESAPI.PlanSetup planSetup)
         {
@@ -1401,6 +1415,7 @@ namespace ChartCheck.Core
                 WriteInColor($"{beam.Applicator.Id}\n", ConsoleColor.Yellow);
                 WriteInColor($"X1: {jawX1} X2: {jawX2} Y1: {jawY1} Y2: {jawY2}\n");
             }
+            Console.WriteLine("========= Completion of checks =========\n");
         }
         static void ImageChecks(ESAPI.PlanSetup plan)
         {
