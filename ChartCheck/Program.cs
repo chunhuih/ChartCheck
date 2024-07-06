@@ -36,6 +36,9 @@ namespace ChartCheck
             {
                 //Console.Error.WriteLine($"Exception: {e}");
                 Console.Error.WriteLine($"Unable to establish connection to Eclipse. Please ensure that you are running this app in an Eclipse environment.");
+                WriteInColor("Press any key to end this application...");
+                Console.ReadKey();
+                return;
             }
             if (args.Length > 0)
             {
