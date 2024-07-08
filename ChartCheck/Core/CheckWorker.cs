@@ -892,7 +892,7 @@ namespace ChartCheck.Core
             Console.WriteLine("========= Reference point checks: =========");
             Console.Write("Primary reference point ID: ");
             WriteInColor($"{planSetup.PrimaryReferencePoint.Id}  ", ConsoleColor.Yellow);
-            Console.Write("Physics point (True/False): ");
+            Console.Write("Physical point (True/False): ");
             WriteInColor($"{planSetup.PrimaryReferencePoint.HasLocation(planSetup)}\n", ConsoleColor.Yellow);
             Console.Write("Dose limits defined for session: ");
             WriteInColor($"{planSetup.PrimaryReferencePoint.SessionDoseLimit.Dose} {planSetup.PrimaryReferencePoint.SessionDoseLimit.Unit}; ", ConsoleColor.Yellow);
@@ -900,6 +900,8 @@ namespace ChartCheck.Core
             WriteInColor($"{planSetup.PrimaryReferencePoint.DailyDoseLimit.Dose} {planSetup.PrimaryReferencePoint.DailyDoseLimit.Unit}; ", ConsoleColor.Yellow);
             Console.Write("for total: ");
             WriteInColor($"{planSetup.PrimaryReferencePoint.TotalDoseLimit.Dose} {planSetup.PrimaryReferencePoint.TotalDoseLimit.Unit}\n", ConsoleColor.Yellow);
+            Console.Write("Plan dose per fraction at this point: ");
+            WriteInColor($"{planSetup.PlannedDosePerFraction.Dose} {planSetup.PlannedDosePerFraction.Unit}\n", ConsoleColor.Yellow);
             ImageChecks(planSetup);
             Console.WriteLine("========= Completion of checks =========\n");
         }
@@ -945,6 +947,18 @@ namespace ChartCheck.Core
         {
             WriteInColor($"Checking TBI plan: ");
             WriteInColor($"{planSetup.Id}\n", ConsoleColor.Yellow);
+            WriteInColor($"Primary reference point ID: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.Id}  ", ConsoleColor.Yellow);
+            Console.Write("Physical point (True/False): ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.HasLocation(planSetup)}\n", ConsoleColor.Yellow);
+            Console.Write("Dose limits defined for session: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.SessionDoseLimit.Dose} {planSetup.PrimaryReferencePoint.SessionDoseLimit.Unit}; ", ConsoleColor.Yellow);
+            Console.Write("for daily: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.DailyDoseLimit.Dose} {planSetup.PrimaryReferencePoint.DailyDoseLimit.Unit}; ", ConsoleColor.Yellow);
+            Console.Write("for total: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.TotalDoseLimit.Dose} {planSetup.PrimaryReferencePoint.TotalDoseLimit.Unit}\n", ConsoleColor.Yellow);
+            Console.Write("Plan dose per fraction at this point: ");
+            WriteInColor($"{planSetup.PlannedDosePerFraction.Dose} {planSetup.PlannedDosePerFraction.Unit}\n", ConsoleColor.Yellow);
             foreach (var beam in planSetup.Beams)
             {
                 double GantryAngle = beam.ControlPoints.First().GantryAngle;
@@ -954,10 +968,10 @@ namespace ChartCheck.Core
                 double jawX2 = beam.ControlPoints.First().JawPositions.X2;
                 double jawY1 = beam.ControlPoints.First().JawPositions.Y1;
                 double jawY2 = beam.ControlPoints.First().JawPositions.Y2;
-                WriteInColor($"Beam ID: ");
+                WriteInColor($"################ Beam ID: ");
                 WriteInColor($"{beam.Id} ", ConsoleColor.Yellow);
                 WriteInColor($"name: ");
-                WriteInColor($"{beam.Name}:\n", ConsoleColor.Yellow);
+                WriteInColor($"{beam.Name}\n", ConsoleColor.Yellow);
                 if (beam.ControlPoints.Count() > 2)
                 {
                     WriteInColor("ERROR: not a static field. \n", ConsoleColor.Red);
@@ -972,7 +986,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tEnergy: {beam.EnergyModeDisplayName}\t");
+                WriteInColor($"Energy: ");
+                WriteInColor($"{beam.EnergyModeDisplayName}\t", ConsoleColor.Yellow);
                 if (beam.EnergyModeDisplayName != "10X")
                 {
                     WriteInColor($"ERROR: Beam energy {beam.EnergyModeDisplayName}\n", ConsoleColor.Red);
@@ -981,7 +996,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tGantry: {GantryAngle}\t");
+                WriteInColor($"Gantry: ");
+                WriteInColor($"{GantryAngle}\t", ConsoleColor.Yellow);
                 if (beam.TreatmentUnit.Id == "TrueBeam1" && (GantryAngle > 280 || GantryAngle < 265))
                 {
                     WriteInColor($"ERROR: Gantry angle invalid: {GantryAngle}\n", ConsoleColor.Red);
@@ -994,7 +1010,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tCollimator: {collimatorAngle}\t");
+                WriteInColor($"Collimator: ");
+                WriteInColor($"{collimatorAngle}\t", ConsoleColor.Yellow);
                 if (beam.TreatmentUnit.Id == "TrueBeam1" && collimatorAngle != 315)
                 {
                     WriteInColor($"ERROR: Collimator angle invalid: {collimatorAngle}\n", ConsoleColor.Red);
@@ -1007,7 +1024,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tCouch angle: {couchAngle}\t");
+                WriteInColor($"Couch angle: ");
+                WriteInColor($"{couchAngle}\t", ConsoleColor.Yellow);
                 if (couchAngle != 0)
                 {
                     WriteInColor($"ERROR: Couch angle is wrong.\n", ConsoleColor.Red);
@@ -1016,7 +1034,7 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tX1: {jawX1} X2: {jawX2} Y1: {jawY1} Y2: {jawY2}\t");
+                WriteInColor($"X1: {jawX1} X2: {jawX2} Y1: {jawY1} Y2: {jawY2}\t");
                 if (jawX1 > -200 || jawX2 < 200 || jawY1 > -200 || jawY2 < 200)
                 {
                     WriteInColor($"ERROR: Please check jaw settings: {jawX1} {jawX2} {jawY1} {jawY2}\n", ConsoleColor.Red);
@@ -1025,7 +1043,16 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tSSD: {beam.PlannedSSD} mm\t");
+                if (beam.MLC != null)
+                {
+                    WriteInColor($"MLC exists.  Fail.\n", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"No MLC.  Pass.\n", ConsoleColor.Green);
+                }
+                WriteInColor($"SSD: ");
+                WriteInColor($"{beam.PlannedSSD} mm\t", ConsoleColor.Yellow);
                 if (beam.PlannedSSD < 4030 || beam.PlannedSSD > 4270)
                 {
                     WriteInColor($"WARNING: SSD = {beam.PlannedSSD} out of range.\n", ConsoleColor.Yellow);
@@ -1034,7 +1061,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tMU = {beam.Meterset.Value} {beam.Meterset.Unit}\t");
+                WriteInColor($"MU = ");
+                WriteInColor($"{beam.Meterset.Value} {beam.Meterset.Unit}\t", ConsoleColor.Yellow);
                 if (beam.Meterset.Value > 2600 || beam.Meterset.Value < 1800)
                 {
                     WriteInColor($"ERROR: MU out of tolerance.\n", ConsoleColor.Red);
@@ -1043,7 +1071,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tDose rate: {beam.DoseRate}\t");
+                WriteInColor($"Dose rate: ");
+                WriteInColor($"{beam.DoseRate}\t", ConsoleColor.Yellow);
                 if (beam.DoseRate != 200)
                 {
                     WriteInColor($"ERROR: Dose rate is wrong: {beam.DoseRate}\n", ConsoleColor.Red);
@@ -1052,7 +1081,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tTolerance: {beam.ToleranceTableLabel}\t");
+                WriteInColor($"Tolerance: ");
+                WriteInColor($"{beam.ToleranceTableLabel}\t", ConsoleColor.Yellow);
                 if (beam.ToleranceTableLabel != "TBI photon")
                 {
                     WriteInColor($"ERROR: wrong tolerance table.\n", ConsoleColor.Red);
@@ -1061,7 +1091,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tTime: {beam.TreatmentTime / 60} minutes.\t");
+                WriteInColor($"Time: ");
+                WriteInColor($"{beam.TreatmentTime / 60} minutes.\t", ConsoleColor.Yellow);
                 if (beam.Meterset.Value / beam.DoseRate * 1.2 > beam.TreatmentTime)
                 {
                     WriteInColor($"ERROR: Treatment time out of tolerance.\n", ConsoleColor.Red);
@@ -1070,7 +1101,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tTray: {beam.Trays.First().Id}\t");
+                WriteInColor($"Tray: ");
+                WriteInColor($"{beam.Trays.First().Id}\t", ConsoleColor.Yellow);
                 if (beam.Trays.First().Id != "CustomBlockTray")
                 {
                     WriteInColor($"ERROR: wrong tray.\n", ConsoleColor.Red);
@@ -1079,7 +1111,7 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor($"\tTechnique: {beam.Technique.Id} {beam.Technique.Name}\t");
+                WriteInColor($"Technique: {beam.Technique.Id} {beam.Technique.Name}\t");
                 if (beam.Technique.Id != "TOTAL")
                 {
                     WriteInColor($"ERROR: wrong technique.\n", ConsoleColor.Red);
