@@ -63,7 +63,7 @@ namespace ChartCheck.Core
             List<string> courseList = new List<string>();
             List<string> planList = new List<string>();
             WriteInColor($"Index {String.Format("{0,-30}", "Course")} " +
-                $"{String.Format("{0,-20}", "Prescription")} " +
+                $"{String.Format("{0,-25}", "Prescription")} " +
                 $"{String.Format("{0, -20}", "Plan")} Plan approval\n");
             foreach (Course eachCourse in patient.Courses)
             {
@@ -79,7 +79,7 @@ namespace ChartCheck.Core
                     }
                     catch
                     {
-                        rxname = "N/A";
+                        rxname = "(Workflow plan)";
                     }
                     try
                     {
@@ -92,13 +92,19 @@ namespace ChartCheck.Core
                     var color = ConsoleColor.Yellow;
                     if (rxname == "(None)" || planApprovalStatus == "Rejected" ||
                         planApprovalStatus == PlanSetupApprovalStatus.Completed.ToString() ||
-                        planApprovalStatus == PlanSetupApprovalStatus.CompletedEarly.ToString())
+                        planApprovalStatus == PlanSetupApprovalStatus.CompletedEarly.ToString() ||
+                        eachCourse.ClinicalStatus == CourseClinicalStatus.Completed )
                     {
                         color = ConsoleColor.Red;
                     }
+                    if (eachCourse.ClinicalStatus == CourseClinicalStatus.Active &&
+                        rxname != "(None)" && planApprovalStatus == PlanSetupApprovalStatus.TreatmentApproved.ToString() )
+                    {
+                        color = ConsoleColor.Green;
+                    }
                     WriteInColor($"{String.Format("{0,-5}", $"{index}")} " +
                         $"{String.Format("{0,-30}", $"{courseList[index]} ({eachCourse.ClinicalStatus})")} " +
-                        $"{String.Format("{0,-20}", $"{rxname}")} " +
+                        $"{String.Format("{0,-25}", $"{rxname}")} " +
                         $"{String.Format("{0,-20}", $"{planList[index]}")} " +
                         $"{planApprovalStatus}\n", color);
                     index++;
@@ -251,16 +257,22 @@ namespace ChartCheck.Core
                         {
                             if(plan.PlanSetupId.Value == planSetup.Id)
                             {
+                                var color = ConsoleColor.Yellow;
+                                if( plan.ApprovalStatus.Value == "TreatApproval")
+                                {
+                                    color = ConsoleColor.Green;
+                                }
+                                var timestamp = plan.ApprovalDate.Value.Substring(0, plan.ApprovalDate.Value.Length - 6).Replace('T', ' ');
                                 WriteInColor($"Plan ID: ");
-                                WriteInColor($"{plan.PlanSetupId.Value} ",ConsoleColor.Yellow);
+                                WriteInColor($"{plan.PlanSetupId.Value} ", color);
                                 WriteInColor($"Plan name: ");
-                                WriteInColor($"{plan.PlanSetupName.Value} ", ConsoleColor.Yellow);
+                                WriteInColor($"{plan.PlanSetupName.Value} ", color);
                                 WriteInColor($"Status: ");
-                                WriteInColor($"{plan.ApprovalStatus.Value} ", ConsoleColor.Yellow);
+                                WriteInColor($"{plan.ApprovalStatus.Value} ", color);
                                 WriteInColor($"by ");
-                                WriteInColor($"{plan.ApprovedBy.Value} ", ConsoleColor.Yellow);
+                                WriteInColor($"{plan.ApprovedBy.Value} ", color);
                                 WriteInColor($"on ");
-                                WriteInColor($"{plan.ApprovalDate.Value.Substring(0, plan.ApprovalDate.Value.Length - 6)}\n", ConsoleColor.Yellow);
+                                WriteInColor($"{timestamp}\n", color);
                             }
                         }
                     }
@@ -428,12 +440,12 @@ namespace ChartCheck.Core
             // If the plan is based on 3D images, check treatment plan settings.
             Console.WriteLine("========= Treatment plan setting checks: =========");
             var calcModel = planSetup.PhotonCalculationModel;
-            Console.Write($"Calculation model: ");
+            Console.Write(string.Format("{0,-50}", "Calculation model: "));
             WriteInColor($"{calcModel}\n", ConsoleColor.Yellow);
             Dictionary<string, string> calcOptions = planSetup.PhotonCalculationOptions;
             foreach (var item in calcOptions)
             {
-                Console.Write($"{item.Key}\t");
+                Console.Write(string.Format("{0,-50}", item.Key));
                 WriteInColor($"{item.Value}\n", ConsoleColor.Yellow);
             }
             bool useGating = planSetup.UseGating;
@@ -712,6 +724,16 @@ namespace ChartCheck.Core
                     {
                         WriteInColor("\r\r\r\n");
                     }
+                }
+            }
+            foreach (var beam in planSetup.Beams)
+            {
+                if (beam.IsSetupField == false)
+                {
+                    Console.Write($"ID: ");
+                    WriteInColor(String.Format("{0,-15}", beam.Id), ConsoleColor.Yellow);
+                    Console.Write("Meterset: ");
+                    WriteInColor(String.Format("{0:0.0} {1}\n", beam.Meterset.Value, beam.Meterset.Unit), ConsoleColor.Yellow);
                 }
             }
             if (isElectron)
@@ -1127,6 +1149,18 @@ namespace ChartCheck.Core
         {
             WriteInColor($"Checking TBI CW boost plan: ");
             WriteInColor($"{planSetup.Id}\n", ConsoleColor.Yellow);
+            WriteInColor($"Primary reference point ID: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.Id}  ", ConsoleColor.Yellow);
+            Console.Write("Physical point (True/False): ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.HasLocation(planSetup)}\n", ConsoleColor.Yellow);
+            Console.Write("Dose limits defined for session: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.SessionDoseLimit.Dose} {planSetup.PrimaryReferencePoint.SessionDoseLimit.Unit}; ", ConsoleColor.Yellow);
+            Console.Write("for daily: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.DailyDoseLimit.Dose} {planSetup.PrimaryReferencePoint.DailyDoseLimit.Unit}; ", ConsoleColor.Yellow);
+            Console.Write("for total: ");
+            WriteInColor($"{planSetup.PrimaryReferencePoint.TotalDoseLimit.Dose} {planSetup.PrimaryReferencePoint.TotalDoseLimit.Unit}\n", ConsoleColor.Yellow);
+            Console.Write("Plan dose per fraction at this point: ");
+            WriteInColor($"{planSetup.PlannedDosePerFraction.Dose} {planSetup.PlannedDosePerFraction.Unit}\n", ConsoleColor.Yellow);
             foreach (var beam in planSetup.Beams)
             {
                 double GantryAngle = beam.ControlPoints.First().GantryAngle;
