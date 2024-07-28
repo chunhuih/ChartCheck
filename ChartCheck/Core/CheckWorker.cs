@@ -11,6 +11,7 @@ using System.Configuration;
 using System.Net.Http;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
+using System.Runtime.Remoting.Contexts;
 
 namespace ChartCheck.Core
 {
@@ -277,6 +278,29 @@ namespace ChartCheck.Core
                         }
                     }
                 }
+            }
+            GetPatientRefPointsRequest getPatientRefPointsRequest = new GetPatientRefPointsRequest
+            {
+                PatientId = new VMSType.String { Value = MRN }
+            };
+            Console.WriteLine("========= list of reference points for this patient:");
+            request = $"{{\"__type\":\"GetPatientRefPointsRequest:http://services.varian.com/AriaWebConnect/Link\", {JsonConvert.SerializeObject(getPatientRefPointsRequest).TrimStart('{')}}}";
+            response = SendData(request, true, apiKey);
+            GetPatientRefPointsResponse getPatientRefPointsResponse = JsonConvert.DeserializeObject<GetPatientRefPointsResponse>(response);
+            foreach (var point in getPatientRefPointsResponse.ReferencePoints)
+            {
+                if(point.ReferencePointId.Value.IndexOf("AUIT") == 0)
+                {
+                    continue;
+                }
+                WriteInColor($"ID: ");
+                WriteInColor($"{point.ReferencePointId.Value} ", ConsoleColor.Yellow);
+                WriteInColor($"Session dose limit: ");
+                WriteInColor($"{point.SessionDoseLimit.Value} ", ConsoleColor.Yellow);
+                WriteInColor($"Daily dose limit: ");
+                WriteInColor($"{point.DailyDoseLimit.Value} ", ConsoleColor.Yellow);
+                WriteInColor($"Total dose limit: ");
+                WriteInColor($"{point.TotalDoseLimit.Value} \n", ConsoleColor.Yellow);
             }
             Console.WriteLine("========= Completion of checks =========\n");
             return;
@@ -733,7 +757,21 @@ namespace ChartCheck.Core
                     Console.Write($"ID: ");
                     WriteInColor(String.Format("{0,-15}", beam.Id), ConsoleColor.Yellow);
                     Console.Write("Meterset: ");
-                    WriteInColor(String.Format("{0:0.0} {1}\n", beam.Meterset.Value, beam.Meterset.Unit), ConsoleColor.Yellow);
+                    WriteInColor(String.Format("{0:0.0} {1}\t", beam.Meterset.Value, beam.Meterset.Unit), ConsoleColor.Yellow);
+                    Console.Write("Technique: ");
+                    WriteInColor(String.Format("{0}\n", beam.Technique), ConsoleColor.Yellow);
+                }
+            }
+            foreach (var beam in planSetup.Beams)
+            {
+                if (beam.IsSetupField == false && beam.MLC != null)
+                {
+                    Console.Write($"ID: ");
+                    WriteInColor(String.Format("{0,-15}", beam.Id), ConsoleColor.Yellow);
+                    Console.Write($"MLC ID: ");
+                    WriteInColor($"{beam.MLC.Id}   ", ConsoleColor.Yellow);
+                    Console.Write($"MLC closed? ");
+                    WriteInColor($"{beam.HasAllMLCLeavesClosed}\n", ConsoleColor.Yellow);
                 }
             }
             if (isElectron)
@@ -1085,7 +1123,8 @@ namespace ChartCheck.Core
                 }
                 WriteInColor($"MU = ");
                 WriteInColor($"{beam.Meterset.Value} {beam.Meterset.Unit}\t", ConsoleColor.Yellow);
-                if (beam.Meterset.Value > 2600 || beam.Meterset.Value < 1800)
+                var scaledMU = beam.Meterset.Value / (planSetup.PlannedDosePerFraction.Dose * ((planSetup.PlannedDosePerFraction.Unit == DoseValue.DoseUnit.cGy) ? 1 : 100)) * 200;
+                if (scaledMU > 2600 || scaledMU < 1800)
                 {
                     WriteInColor($"ERROR: MU out of tolerance.\n", ConsoleColor.Red);
                 }
