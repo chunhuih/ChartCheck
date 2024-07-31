@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
 using System.Configuration;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
@@ -61,6 +58,7 @@ namespace ChartCheck
         //    w.Write($"{DateTime.Now.ToLongTimeString()} {DateTime.Now.ToLongDateString()}");
         //    w.WriteLine($": {logMessage}");
         //}
+
         public static void WriteInColor(string s, ConsoleColor color = ConsoleColor.Gray)
         {
             Console.ForegroundColor = color;

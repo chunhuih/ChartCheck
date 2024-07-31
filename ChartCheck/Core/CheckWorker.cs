@@ -354,6 +354,8 @@ namespace ChartCheck.Core
             Console.WriteLine("========= Prescription checks: =========");
             if (rx != null)
             {
+                Console.Write($"Site: ");
+                WriteInColor($"{rx.Site}. ", ConsoleColor.Yellow);
                 Console.Write($"Name: ");
                 WriteInColor($"{rx.Id}. ", ConsoleColor.Yellow);
                 Console.Write("Target(s): ");
@@ -399,7 +401,7 @@ namespace ChartCheck.Core
                 // check session info
                 // These are sessions that are scheduled in Plan Scheduling workspace.
                 Console.Write("Frequency: ");
-                WriteInColor($"{GetFrequencyFromAria(planSetup.Course.Patient.Id, planSetup)}  ", ConsoleColor.Yellow);
+                WriteInColor($"{GetFrequencyFromAria(planSetup)}  ", ConsoleColor.Yellow);
                 int numSessions = planSetup.TreatmentSessions.Count();
                 Console.Write($"Number of scheduled sessions: ");
                 WriteInColor($"{planSetup.TreatmentSessions.Count()} ", ConsoleColor.Yellow);
@@ -411,17 +413,23 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"\tERROR: Session check failed.\n", ConsoleColor.Red);
                 }
-                Console.Write($"Sessions: ");
                 for (int i = 0; i < planSetup.TreatmentSessions.Count(); i++)
                 {
+                    if(i == 0)
+                    {
+                        Console.Write($"Sessions: ");
+                    }
                     var color = ConsoleColor.Yellow;
                     if (planSetup.TreatmentSessions.ElementAt(i).Status == TreatmentSessionStatus.Completed)
                     {
                         color = ConsoleColor.Green;
                     }
                     WriteInColor($"{i + 1} {planSetup.TreatmentSessions.ElementAt(i).Status}, ", color);
+                    if(i == planSetup.TreatmentSessions.Count() - 1)
+                    {
+                        Console.WriteLine("\b\b.");
+                    }
                 }
-                Console.WriteLine("\b\b.");
                 var notes = rx.Notes;
                 if (notes.ToLower().Contains("nanodot") || notes.ToLower().Contains("vivo"))
                 {
@@ -792,8 +800,11 @@ namespace ChartCheck.Core
                     {
                         WriteInColor($"Beam energy: ");
                         WriteInColor($"{beam.EnergyModeDisplayName}, ", ConsoleColor.Yellow);
-                        WriteInColor($"Applicator: ");
-                        WriteInColor($"{beam.Applicator.Id}, ", ConsoleColor.Yellow);
+                        if(beam.Applicator != null)
+                        {
+                            WriteInColor($"Applicator: ");
+                            WriteInColor($"{beam.Applicator.Id}, ", ConsoleColor.Yellow);
+                        }
                         WriteInColor($"Tray: ");
                         WriteInColor($"{beam.Trays.First().Id}. ", ConsoleColor.Yellow);
                         var currentBackgroundColor = Console.BackgroundColor;
@@ -820,7 +831,13 @@ namespace ChartCheck.Core
             }
             WriteInColor("\n");
             // Check field notes:
-            // to be done: Setup note is not available in ESAPI. probably through Aria Access.
+            WriteInColor("Field notes: ");
+            List<string> fieldNotes = GetFieldNotes(planSetup);
+            foreach (var fieldNote in fieldNotes)
+            {
+                WriteInColor($"{fieldNote}\n", ConsoleColor.Yellow);
+            }
+            // to be done: Setup note is not available in ESAPI. probably through AriaAccess.
             // Check tolerance table settings
             List<string> toleranceTableList = new List<string>();
             foreach (var beam in planSetup.Beams)
@@ -975,13 +992,13 @@ namespace ChartCheck.Core
             ImageChecks(planSetup);
             Console.WriteLine("========= Completion of checks =========\n");
         }
-        static string GetFrequencyFromAria(string MRN, ESAPI.PlanSetup planSetup)
+        static string GetFrequencyFromAria(ESAPI.PlanSetup planSetup)
         {
             string frequencyData = "<N/A>";
             string apiKey = "8c2b663e-cc05-4e8b-b988-38900d5a3649";
             GetPatientCoursesAndPlanSetupsRequest getPatientCoursesAndPlanSetupsRequest = new GetPatientCoursesAndPlanSetupsRequest
             {
-                PatientId = new VMSType.String { Value = MRN },
+                PatientId = new VMSType.String { Value = planSetup.Course.Patient.Id },
                 TreatmentType = new VMSType.String { Value = "Linac" },
             };
             string request = $"{{\"__type\":\"GetPatientCoursesAndPlanSetupsRequest:http://services.varian.com/AriaWebConnect/Link\", {JsonConvert.SerializeObject(getPatientCoursesAndPlanSetupsRequest).TrimStart('{')}}}";
@@ -991,7 +1008,7 @@ namespace ChartCheck.Core
             {
                 GetPatientClinicalConceptsRequest getPatientClinicalConceptsRequest = new GetPatientClinicalConceptsRequest
                 {
-                    PatientId = new VMSType.String { Value = MRN },
+                    PatientId = new VMSType.String { Value = planSetup.Course.Patient.Id },
                     CourseId = courses.CourseId
                 };
                 string requestClinicalConcepts = $"{{\"__type\":\"GetPatientClinicalConceptsRequest:http://services.varian.com/AriaWebConnect/Link\", {JsonConvert.SerializeObject(getPatientClinicalConceptsRequest).TrimStart('{')}}}";
@@ -1011,6 +1028,28 @@ namespace ChartCheck.Core
                 }
             }
             return frequencyData;
+        }
+        static List<string> GetFieldNotes(ESAPI.PlanSetup planSetup)
+        {
+            List<string> fieldNotes = new List<string>();
+            string apiKey = "8c2b663e-cc05-4e8b-b988-38900d5a3649";
+            GetPatientPlanTxFieldsRequest getPatientPlanTxFieldsRequest = new GetPatientPlanTxFieldsRequest
+            {
+                CourseId = new VMSType.String { Value = planSetup.Course.Id },
+                PatientId = new VMSType.String { Value = planSetup.Course.Patient.Id },
+                PlanId = new VMSType.String { Value = planSetup.Id },
+            };
+            string request = $"{{\"__type\":\"GetPatientPlanTxFieldsRequest:http://services.varian.com/AriaWebConnect/Link\", {JsonConvert.SerializeObject(getPatientPlanTxFieldsRequest).TrimStart('{')}}}";
+            string response = SendData(request, true, apiKey);
+            GetPatientPlanTxFieldsResponse getPatientPlanTxFieldsResponse = JsonConvert.DeserializeObject<GetPatientPlanTxFieldsResponse>(response);
+            foreach (var fieldInfo in getPatientPlanTxFieldsResponse.FieldInfos)
+            {
+                if (fieldNotes.Contains(fieldInfo.SetupNote.Value) == false)
+                {
+                    fieldNotes.Add(fieldInfo.SetupNote.Value);
+                }
+            }
+            return fieldNotes;
         }
 
         static void CheckTBIPlan(ESAPI.PlanSetup planSetup)
