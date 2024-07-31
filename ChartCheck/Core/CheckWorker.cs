@@ -221,6 +221,8 @@ namespace ChartCheck.Core
                         WriteInColor("Rx status: ");
                         WriteInColor($"{concept.Status.Value} ", ConsoleColor.Yellow);
                         WriteInColor($"===\n");
+                        WriteInColor($"Treatment site: ");
+                        WriteInColor($"{concept.Site.Value}\n", ConsoleColor.Yellow);
                         foreach (var info in concept.PrescriptionVolumeInfo)
                         {
                             WriteInColor($"Target: ");
@@ -233,9 +235,17 @@ namespace ChartCheck.Core
                         WriteInColor($"Number of fractions: ");
                         WriteInColor($"{concept.NumberOfFractions.Value} ", ConsoleColor.Yellow);
                         WriteInColor(" frequency: ");
-                        WriteInColor($"{concept.Frequency.Value} ", ConsoleColor.Yellow);
+                        WriteInColor($"{concept.Frequency.Value}\n", ConsoleColor.Yellow);
                         WriteInColor($"Energy: ");
-                        WriteInColor($"{concept.Energy.Value}\n", ConsoleColor.Yellow);
+                        WriteInColor($"{concept.Energy.Value} ", ConsoleColor.Yellow);
+                        WriteInColor($"Technique: ");
+                        WriteInColor($"{concept.Technique.Value} ", ConsoleColor.Yellow);
+                        WriteInColor($"Treatment type: ");
+                        WriteInColor($"{concept.TretmentIntentType.Value}\n", ConsoleColor.Yellow);
+                        WriteInColor($"Bolus thickness: ");
+                        WriteInColor($"{concept.BolusThickness.Value} ", ConsoleColor.Yellow);
+                        WriteInColor($"Bolus frequency: ");
+                        WriteInColor($"{concept.BolusFrequency.Value}\n", ConsoleColor.Yellow);
                         WriteInColor($"Plans: ");
                         WriteInColor($"{concept.Plans.Value}\n", ConsoleColor.Yellow);
                         WriteInColor("Rx notes: ");
