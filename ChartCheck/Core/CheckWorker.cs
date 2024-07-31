@@ -831,13 +831,15 @@ namespace ChartCheck.Core
             }
             WriteInColor("\n");
             // Check field notes:
-            WriteInColor("Field notes: ");
             List<string> fieldNotes = GetFieldNotes(planSetup);
-            foreach (var fieldNote in fieldNotes)
+            if(fieldNotes.Count > 0)
             {
-                WriteInColor($"{fieldNote}\n", ConsoleColor.Yellow);
+                WriteInColor("Field notes: \n");
+                foreach (var fieldNote in fieldNotes)
+                {
+                    WriteInColor($"{fieldNote}\n", ConsoleColor.Yellow);
+                }
             }
-            // to be done: Setup note is not available in ESAPI. probably through AriaAccess.
             // Check tolerance table settings
             List<string> toleranceTableList = new List<string>();
             foreach (var beam in planSetup.Beams)
@@ -1042,11 +1044,14 @@ namespace ChartCheck.Core
             string request = $"{{\"__type\":\"GetPatientPlanTxFieldsRequest:http://services.varian.com/AriaWebConnect/Link\", {JsonConvert.SerializeObject(getPatientPlanTxFieldsRequest).TrimStart('{')}}}";
             string response = SendData(request, true, apiKey);
             GetPatientPlanTxFieldsResponse getPatientPlanTxFieldsResponse = JsonConvert.DeserializeObject<GetPatientPlanTxFieldsResponse>(response);
-            foreach (var fieldInfo in getPatientPlanTxFieldsResponse.FieldInfos)
+            if(getPatientPlanTxFieldsResponse.FieldInfos != null)
             {
-                if (fieldNotes.Contains(fieldInfo.SetupNote.Value) == false)
+                foreach (var fieldInfo in getPatientPlanTxFieldsResponse.FieldInfos)
                 {
-                    fieldNotes.Add(fieldInfo.SetupNote.Value);
+                    if (fieldNotes.Contains(fieldInfo.SetupNote.Value) == false)
+                    {
+                        fieldNotes.Add(fieldInfo.SetupNote.Value);
+                    }
                 }
             }
             return fieldNotes;
