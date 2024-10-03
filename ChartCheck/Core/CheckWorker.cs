@@ -214,12 +214,17 @@ namespace ChartCheck.Core
                 {
                     if (concept.Plans.Value != null && concept.Plans.Value.Contains(planSetup.Id))
                     {
+                        var color = ConsoleColor.Yellow;
+                        if(concept.Status.Value == "Approved")
+                        {
+                            color = ConsoleColor.Green;
+                        }
                         WriteInColor($"=== course: ");
-                        WriteInColor($"{concept.CourseId.Value} ", ConsoleColor.Yellow);
+                        WriteInColor($"{concept.CourseId.Value} ", color);
                         WriteInColor("Rx name: ");
-                        WriteInColor($"{concept.PrescriptionName.Value} ", ConsoleColor.Yellow);
+                        WriteInColor($"{concept.PrescriptionName.Value} ", color);
                         WriteInColor("Rx status: ");
-                        WriteInColor($"{concept.Status.Value} ", ConsoleColor.Yellow);
+                        WriteInColor($"{concept.Status.Value} ", color);
                         WriteInColor($"===\n");
                         WriteInColor($"Treatment site: ");
                         WriteInColor($"{concept.Site.Value}\n", ConsoleColor.Yellow);
@@ -268,7 +273,7 @@ namespace ChartCheck.Core
                         {
                             if(plan.PlanSetupId.Value == planSetup.Id)
                             {
-                                var color = ConsoleColor.Yellow;
+                                color = ConsoleColor.Yellow;
                                 if( plan.ApprovalStatus.Value == "TreatApproval")
                                 {
                                     color = ConsoleColor.Green;
