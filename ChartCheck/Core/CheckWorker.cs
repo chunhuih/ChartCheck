@@ -12,6 +12,7 @@ using System.Net.Http;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 using System.Runtime.Remoting.Contexts;
+using VMS.SF.Infrastructure.Contracts.Logging.HipaaObjectTypes;
 
 namespace ChartCheck.Core
 {
@@ -228,6 +229,7 @@ namespace ChartCheck.Core
                         WriteInColor($"===\n");
                         WriteInColor($"Treatment site: ");
                         WriteInColor($"{concept.Site.Value}\n", ConsoleColor.Yellow);
+                        int nFx = 0;
                         foreach (var info in concept.PrescriptionVolumeInfo)
                         {
                             WriteInColor($"Target: ");
@@ -235,7 +237,10 @@ namespace ChartCheck.Core
                             WriteInColor($" Dose/fx: ");
                             WriteInColor($"{string.Format("{0,-4}", info.DosePerFraction.Value)} Gy", ConsoleColor.Yellow);
                             WriteInColor($" total dose: ");
-                            WriteInColor($"{info.TotalDose.Value} Gy\n", ConsoleColor.Yellow);
+                            WriteInColor($"{string.Format("{0,-5}", info.TotalDose.Value)} Gy", ConsoleColor.Yellow);
+                            nFx = (int) (float.Parse(info.TotalDose.Value) / float.Parse(info.DosePerFraction.Value));
+                            WriteInColor($" # fractions: ");
+                            WriteInColor($"{nFx}\n", ConsoleColor.Yellow);
                         }
                         WriteInColor($"Number of fractions: ");
                         WriteInColor($"{concept.NumberOfFractions.Value} ", ConsoleColor.Yellow);
@@ -255,6 +260,47 @@ namespace ChartCheck.Core
                         WriteInColor($"{concept.Plans.Value}\n", ConsoleColor.Yellow);
                         WriteInColor("Rx notes: ");
                         WriteInColor($"{concept.Notes.Value}\n", ConsoleColor.Yellow);
+
+                        GetPatientPlansRequest getPatientPlansRequest = new GetPatientPlansRequest
+                        {
+                            PatientId = new VMSType.String { Value = MRN },
+                            CourseId = courses.CourseId,
+                            PlanSetupId = new VMSType.String { Value = planSetup.Id }
+                        };
+                        string requestPatientPlans = $"{{\"__type\":\"GetPatientPlansRequest:http://services.varian.com/AriaWebConnect/Link\", {JsonConvert.SerializeObject(getPatientPlansRequest).TrimStart('{')}}}";
+                        response = SendData(requestPatientPlans, true, apiKey);
+                        if (response.ToLower().Contains("syntax error"))
+                        {
+                            Console.WriteLine("Syntax error was found in the prescription query. Please check prescriptions directly.");
+                            break;
+                        }
+                        GetPatientPlansResponse getPatientPlansResponse = JsonConvert.DeserializeObject<GetPatientPlansResponse>(response);
+                        foreach (var patientPlan in getPatientPlansResponse.PatientPlans)
+                        {
+                            color = ConsoleColor.Yellow;
+                            if (patientPlan.NoOfFractions.Value != nFx)
+                            {
+                                color = ConsoleColor.Red;
+                            }
+                            WriteInColor($"Plan ID: ");
+                            WriteInColor($"{patientPlan.PlanSetupId.Value} ", color);
+                            WriteInColor($"Plan name: ");
+                            WriteInColor($"{patientPlan.PlanSetupName.Value} ", color);
+                            WriteInColor($"# of fractions: ");
+                            WriteInColor($"{patientPlan.NoOfFractions.Value} ", color);
+                            if (patientPlan.NoOfFractions.Value != nFx)
+                            {
+                                WriteInColor($"WARNING: fraction number mismatch!\n");
+                            }
+                            else
+                            {
+                                WriteInColor($"\n");
+                            }
+                            WriteInColor($"Plan history info: last modified by ");
+                            WriteInColor($"{patientPlan.HistoryUserName.Value} ", color);
+                            WriteInColor($"Task: ");
+                            WriteInColor($"{patientPlan.HistoryTaskName.Value}\n", color);
+                        }
 
                         GetPatientPlanSetupsRequest getPatientPlanSetupsRequest = new GetPatientPlanSetupsRequest
                         {
