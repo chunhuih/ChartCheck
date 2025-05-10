@@ -238,7 +238,7 @@ namespace ChartCheck.Core
                             WriteInColor($"{string.Format("{0,-4}", info.DosePerFraction.Value)} Gy", ConsoleColor.Yellow);
                             WriteInColor($" total dose: ");
                             WriteInColor($"{string.Format("{0,-5}", info.TotalDose.Value)} Gy", ConsoleColor.Yellow);
-                            nFx = (int) (float.Parse(info.TotalDose.Value) / float.Parse(info.DosePerFraction.Value));
+                            nFx = (int) Math.Round(float.Parse(info.TotalDose.Value) / float.Parse(info.DosePerFraction.Value));
                             WriteInColor($" # fractions: ");
                             WriteInColor($"{nFx}\n", ConsoleColor.Yellow);
                         }
@@ -296,7 +296,7 @@ namespace ChartCheck.Core
                             {
                                 WriteInColor($"\n");
                             }
-                            WriteInColor($"Plan history info: last modified by ");
+                            WriteInColor($"Plan last modified by ");
                             WriteInColor($"{patientPlan.HistoryUserName.Value} ", color);
                             WriteInColor($"Task: ");
                             WriteInColor($"{patientPlan.HistoryTaskName.Value}\n", color);
@@ -325,10 +325,6 @@ namespace ChartCheck.Core
                                     color = ConsoleColor.Green;
                                 }
                                 var timestamp = plan.ApprovalDate.Value.Substring(0, plan.ApprovalDate.Value.Length - 6).Replace('T', ' ');
-                                WriteInColor($"Plan ID: ");
-                                WriteInColor($"{plan.PlanSetupId.Value} ", color);
-                                WriteInColor($"Plan name: ");
-                                WriteInColor($"{plan.PlanSetupName.Value} ", color);
                                 WriteInColor($"Status: ");
                                 WriteInColor($"{plan.ApprovalStatus.Value} ", color);
                                 WriteInColor($"by ");
@@ -541,7 +537,6 @@ namespace ChartCheck.Core
                 Console.Write(string.Format("{0,-50}", item.Key));
                 WriteInColor($"{item.Value}\n", ConsoleColor.Yellow);
             }
-            bool useGating = planSetup.UseGating;
             if (planSetup.UseGating)
             {
                 WriteInColor("Plan using gating.\n", ConsoleColor.Yellow);
@@ -560,7 +555,7 @@ namespace ChartCheck.Core
             }
             Console.WriteLine("========= Tx field checks: =========");
             // check the treatment plan type: VMAT, Conformal ARC, SRS, Field-in-field, etc.
-            bool optimized = false;
+            bool optimized;
             bool is3D = false;
             bool isStaticIMRT = false;
             bool isARC = false;
@@ -1322,7 +1317,7 @@ namespace ChartCheck.Core
                 {
                     WriteInColor("ERROR: not a static field. \n", ConsoleColor.Red);
                 }
-                WriteInColor("Treatment unit: ");
+                WriteInColor(string.Format("{0,-16} ", "Treatment unit: "));
                 WriteInColor($"{beam.TreatmentUnit.Id}\t", ConsoleColor.Yellow);
                 if (beam.TreatmentUnit.Id != "TrueBeam1" && beam.TreatmentUnit.Id != "TrueBeamSTX")
                 {
@@ -1332,9 +1327,9 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor("Energy: ");
+                WriteInColor(string.Format("{0,-16} ", "Energy: "));
                 WriteInColor($"{beam.EnergyModeDisplayName}\n", ConsoleColor.Yellow);
-                WriteInColor("Gantry: ");
+                WriteInColor(string.Format("{0,-16} ", "Gantry: "));
                 WriteInColor($"{GantryAngle}\t", ConsoleColor.Yellow);
                 if (planSetup.Id.ToLower().Contains("ap") || planSetup.Id.ToLower().Contains("ant") ||
                     beam.Name.ToLower().Contains("ap") || beam.Name.ToLower().Contains("ant"))
@@ -1360,7 +1355,7 @@ namespace ChartCheck.Core
                         WriteInColor($"Pass.\n", ConsoleColor.Green);
                     }
                 }
-                WriteInColor("Collimator: ");
+                WriteInColor(string.Format("{0,-16} ", "Collimator: "));
                 WriteInColor($"{collimatorAngle}\t", ConsoleColor.Yellow);
                 if (planSetup.Id.ToLower().Contains("ap") || planSetup.Id.ToLower().Contains("ant") ||
                     beam.Name.ToLower().Contains("ap") || beam.Name.ToLower().Contains("ant"))
@@ -1386,7 +1381,7 @@ namespace ChartCheck.Core
                         WriteInColor($"Pass.\n", ConsoleColor.Green);
                     }
                 }
-                WriteInColor("Couch angle: ");
+                WriteInColor(string.Format("{0,-16} ", "Couch angle: "));
                 WriteInColor($"{couchAngle}\t", ConsoleColor.Yellow);
                 if (couchAngle != 0)
                 {
@@ -1396,17 +1391,17 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor("SSD: ");
+                WriteInColor(string.Format("{0,-16} ", "SSD: "));
                 WriteInColor(string.Format("{0:0} mm\t", beam.PlannedSSD), ConsoleColor.Yellow);
                 if (beam.PlannedSSD.ToString("n0") != "1000")
                 {
-                    WriteInColor($"ERROR: wrong SSD.\n", ConsoleColor.Red);
+                    WriteInColor($"WARNING: Non-standard SSD. Please review and set alert if needed.\n", ConsoleColor.Red);
                 }
                 else
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor("Dose rate: ");
+                WriteInColor(string.Format("{0,-16} ", "Dose rate: "));
                 WriteInColor($"{beam.DoseRate}\t", ConsoleColor.Yellow);
                 if (beam.DoseRate != 1000)
                 {
@@ -1416,10 +1411,12 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor("MU: ");
-                WriteInColor($"{beam.Meterset.Value.ToString("n1")} {beam.Meterset.Unit}\n", ConsoleColor.Yellow);
-                WriteInColor("Time: ");
-                WriteInColor($"{(beam.TreatmentTime / 60).ToString("n1")} minutes.\t", ConsoleColor.Yellow);
+                WriteInColor(string.Format("{0,-16} ", "MU: "));
+                WriteInColor($"{beam.Meterset.Value.ToString("n1")} {beam.Meterset.Unit}\n",
+                             ConsoleColor.Yellow);
+                WriteInColor(string.Format("{0,-16} ", "Time: "));
+                WriteInColor($"{beam.TreatmentTime / 60:n1} minutes.\t",
+                             ConsoleColor.Yellow);
                 if (beam.Meterset.Value / beam.DoseRate * 1.2 > beam.TreatmentTime)
                 {
                     WriteInColor($"ERROR: wrong time limit.\n", ConsoleColor.Red);
@@ -1428,7 +1425,7 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor("Tolerance: ");
+                WriteInColor(string.Format("{0,-16} ", "Tolerance: "));
                 WriteInColor($"{beam.ToleranceTableLabel}\t", ConsoleColor.Yellow);
                 if (beam.ToleranceTableLabel != "TBI CW Electron")
                 {
@@ -1438,7 +1435,7 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor("Technique: ");
+                WriteInColor(string.Format("{0,-16} ", "Technique: "));
                 WriteInColor($"{beam.Technique.Id}\t", ConsoleColor.Yellow);
                 if (beam.Technique.Id != "STATIC")
                 {
@@ -1448,9 +1445,9 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
-                WriteInColor("Tray: ");
+                WriteInColor(string.Format("{0,-16} ", "Tray: "));
                 WriteInColor($"{beam.Trays.First().Id}\n", ConsoleColor.Yellow);
-                WriteInColor("Number of trays: ");
+                WriteInColor(string.Format("{0,-16} ", "Number of trays: "));
                 WriteInColor($"{beam.Trays.Count()}\t", ConsoleColor.Yellow);
                 if (beam.Trays.Count() != 1)
                 {
@@ -1464,7 +1461,7 @@ namespace ChartCheck.Core
                     WriteInColor($"Please check cutout FFDA code for the electron beam.\n", ConsoleColor.Magenta);
                     Console.BackgroundColor = currentBackgroundColor;
                 }
-                WriteInColor("Applicator: ");
+                WriteInColor(string.Format("{0,-16} ", "Applicator: "));
                 WriteInColor($"{beam.Applicator.Id}\t", ConsoleColor.Yellow);
                 WriteInColor($"Jaws: X1 = ");
                 WriteInColor($"{jawX1} mm", ConsoleColor.Yellow);
@@ -1650,7 +1647,7 @@ namespace ChartCheck.Core
                         WriteInColor("Gating is not used. Please verify.\n", ConsoleColor.Yellow);
                     }
                 }
-                if (image.Id.ToLower().Contains("plan") == false)
+                if (image.Id.ToLower().Contains("plan") == false && image.Id.ToLower().Contains("pln") == false)
                 {
                     WriteInColor("Image ID is missing \"PLAN\".\n", ConsoleColor.Red);
                 }
@@ -1694,7 +1691,13 @@ namespace ChartCheck.Core
                 (planSetup.Id.ToLower().Contains("ap") || planSetup.Id.ToLower().Contains("pa")
                 || planSetup.Id.ToLower().Contains("ant") || planSetup.Id.ToLower().Contains("pos")) &&
                 (planSetup.Id.ToLower().Contains("l") || planSetup.Id.ToLower().Contains("r")))
+            {
+                RTPrescription rx = planSetup.RTPrescription;
+                if (rx == null) return false;
+                if (rx.Energies.Count() != 1 || rx.Energies.First().ToLower().Contains("e") != true) return false;
                 return true;
+            }
+            // this looks like a TBI CW boost plan. But check the prescription to make sure it is.
             return false;
         }
         static bool IsConventionalTBITesticularBoost(ESAPI.PlanSetup planSetup)
