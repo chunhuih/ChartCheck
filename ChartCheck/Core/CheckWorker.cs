@@ -33,16 +33,22 @@ namespace ChartCheck.Core
                 WriteInColor("Please use a correct patient ID.\n", ConsoleColor.Red);
                 return;
             }
-            Console.Write("The name of this patient is: ");
+            Console.Write("Patient name: ");
             WriteInColor($"{patient.LastName}, {patient.FirstName}", ConsoleColor.Yellow);
             if (patient.MiddleName == string.Empty)
             {
-                WriteInColor($"\n", ConsoleColor.Yellow);
+                WriteInColor($"  ", ConsoleColor.Yellow);
             }
             else
             {
-                WriteInColor($" {patient.MiddleName}\n", ConsoleColor.Yellow);
+                WriteInColor($" {patient.MiddleName}  ", ConsoleColor.Yellow);
             }
+            Console.Write("ID2: ");
+            WriteInColor($"{patient.Id2}  ", ConsoleColor.Yellow);
+            Console.Write("Gender: ");
+            WriteInColor($"{patient.Sex}  ", ConsoleColor.Yellow);
+            Console.Write("Hospital: ");
+            WriteInColor($"{patient.Hospital}\n", ConsoleColor.Yellow);
             int nCourses = patient.Courses.Count();
             if (nCourses == 0)
             {
@@ -321,6 +327,7 @@ namespace ChartCheck.Core
                             {
                                 color = ConsoleColor.Yellow;
                                 if( plan.ApprovalStatus.Value == "TreatApproval")
+
                                 {
                                     color = ConsoleColor.Green;
                                 }
@@ -398,6 +405,7 @@ namespace ChartCheck.Core
             bool useDIBH = false;
             bool useEEBH = false;
             bool inVivoDosimetry = false;
+            bool useBolus = false;
             Console.WriteLine("========= Prescription checks: =========");
             if (rx != null)
             {
@@ -525,6 +533,40 @@ namespace ChartCheck.Core
             {
                 CheckTBITesticularBoost(planSetup);
                 return;
+            }
+            //
+            // Plan name checks
+            //
+            WriteInColor("Checking plan name: ");
+            bool planNameOK = true;
+            if (rx.Notes.ToLower().Contains("bolus") && !rx.Notes.ToLower().Contains("no bolus"))
+            {
+                useBolus = true;
+            }
+            if (rx != null && (rx.Notes.ToLower().Contains("eebh") &&
+                !planSetup.Id.ToLower().Contains("eebh")))
+            {
+                WriteInColor("Plan name is missing EEBH (end of expiration breath hold) label.\n", ConsoleColor.Red);
+                planNameOK = false;
+            }
+            if (rx != null && useDIBH && !planSetup.Id.ToLower().Contains("bh"))
+            {
+                WriteInColor("Plan name is missing BH for DIBH treatments.\n", ConsoleColor.Red);
+                planNameOK = false;
+            }
+            if (rx != null && useDIBH && planSetup.Id.ToLower().Contains("eebh"))
+            {
+                WriteInColor("Using EEBH instead of BH (for deep inspiration breath hold) label.\n", ConsoleColor.Red);
+                planNameOK = false;
+            }
+            if (rx != null && useEEBH && !planSetup.Id.ToLower().Contains("eebh"))
+            {
+                WriteInColor("Missing EEBH label.\n", ConsoleColor.Red);
+                planNameOK = false;
+            }
+            if (planNameOK)
+            {
+                WriteInColor("Pass.\n", ConsoleColor.Green);
             }
             // If the plan is based on 3D images, check treatment plan settings.
             Console.WriteLine("========= Treatment plan setting checks: =========");
@@ -767,30 +809,9 @@ namespace ChartCheck.Core
                             }
                         }
                     }
-                    if (rx != null && rx.Notes.ToLower().Contains("bolus") && !beam.Name.ToLower().Contains("wb") && !rx.Notes.ToLower().Contains("no bolus"))
+                    if (useBolus && !beam.Name.ToLower().Contains("wb") )
                     {
-                        WriteInColor("Missing bolus label.   ", ConsoleColor.Red);
-                        nameCheck = false;
-                    }
-                    if (rx != null && (rx.Notes.ToLower().Contains("eebh") &&
-                        !beam.Name.ToLower().Contains("eebh")))
-                    {
-                        WriteInColor("Missing EEBH (end of expiration breath hold) label.   ", ConsoleColor.Red);
-                        nameCheck = false;
-                    }
-                    if (rx != null && useDIBH && !beam.Name.ToLower().Contains("bh"))
-                    {
-                        WriteInColor("Missing BH label for DIBH treatments.   ", ConsoleColor.Red);
-                        nameCheck = false;
-                    }
-                    if (rx != null && useDIBH && beam.Name.ToLower().Contains("eebh"))
-                    {
-                        WriteInColor("Using EEBH instead of BH (for deep inspiration breath hold) label.   ", ConsoleColor.Red);
-                        nameCheck = false;
-                    }
-                    if (rx != null && useEEBH && !beam.Name.ToLower().Contains("eebh"))
-                    {
-                        WriteInColor("Missing EEBH label.\n", ConsoleColor.Red);
+                        WriteInColor("Is it missing bolus label?   ", ConsoleColor.Red);
                         nameCheck = false;
                     }
                     if (rx != null && (rx.Notes.ToLower().Contains("hyperarc") || rx.Notes.ToLower().Contains("hyper arc")) &&
@@ -824,6 +845,42 @@ namespace ChartCheck.Core
                     WriteInColor(String.Format("{0:0.0} {1}\t", beam.Meterset.Value, beam.Meterset.Unit), ConsoleColor.Yellow);
                     Console.Write("Technique: ");
                     WriteInColor(String.Format("{0}\n", beam.Technique), ConsoleColor.Yellow);
+                }
+            }
+            foreach (var beam in planSetup.Beams)
+            {
+                if (beam.IsSetupField == false)
+                {
+                    if(useBolus == true)
+                    {
+                        Console.Write($"ID: ");
+                        WriteInColor(String.Format("{0,-15}", beam.Id), ConsoleColor.Yellow);
+                        Console.Write($"Linked bolus: ");
+                        foreach (var bolus in beam.Boluses)
+                        {
+                            WriteInColor(String.Format("{0} \t", bolus.Id), ConsoleColor.Yellow);
+                        }
+                        if (beam.Boluses.Count() == 0)
+                        {
+                            WriteInColor("No bolus linked. Is it missing?", ConsoleColor.Red);
+                        }
+                        else
+                        {
+                            WriteInColor("Bolus linked. Rx indicates bolus.", ConsoleColor.Green);
+                        }
+                        Console.WriteLine("");
+                    }
+                    else if (useBolus == false && beam.Boluses.Count() > 0)
+                    {
+                        Console.Write($"ID: ");
+                        WriteInColor(String.Format("{0,-15}", beam.Id), ConsoleColor.Yellow);
+                        Console.Write($"Linked bolus: ");
+                        foreach (var bolus in beam.Boluses)
+                        {
+                            WriteInColor(String.Format("{0} \t", bolus.Id), ConsoleColor.Yellow);
+                        }
+                        WriteInColor("No bolus is indicated in Rx. Please check Rx.\n", ConsoleColor.Red);
+                    }
                 }
             }
             foreach (var beam in planSetup.Beams)
@@ -1270,7 +1327,11 @@ namespace ChartCheck.Core
                 }
                 else
                 {
-                    WriteInColor($"Pass.\n", ConsoleColor.Green);
+                    WriteInColor($"Pass.\t", ConsoleColor.Green);
+                    var currentBackgroundColor = Console.BackgroundColor;
+                    Console.BackgroundColor = ConsoleColor.Yellow;
+                    WriteInColor($"Please check tray ID for this photon beam.\n", ConsoleColor.Magenta);
+                    Console.BackgroundColor = currentBackgroundColor;
                 }
                 WriteInColor($"Technique: {beam.Technique.Id} {beam.Technique.Name}\t");
                 if (beam.Technique.Id != "TOTAL")
@@ -1412,7 +1473,7 @@ namespace ChartCheck.Core
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
                 WriteInColor(string.Format("{0,-16} ", "MU: "));
-                WriteInColor($"{beam.Meterset.Value.ToString("n1")} {beam.Meterset.Unit}\n",
+                WriteInColor($"{beam.Meterset.Value:n1} {beam.Meterset.Unit}\n",
                              ConsoleColor.Yellow);
                 WriteInColor(string.Format("{0,-16} ", "Time: "));
                 WriteInColor($"{beam.TreatmentTime / 60:n1} minutes.\t",
@@ -1486,9 +1547,9 @@ namespace ChartCheck.Core
                 double jawX2 = beam.ControlPoints.First().JawPositions.X2;
                 double jawY1 = beam.ControlPoints.First().JawPositions.Y1;
                 double jawY2 = beam.ControlPoints.First().JawPositions.Y2;
-                double couchLateral = beam.ControlPoints.First().TableTopLateralPosition;
-                double couchVertical = beam.ControlPoints.First().TableTopVerticalPosition;
-                double couchLongitudinal = beam.ControlPoints.First().TableTopLongitudinalPosition;
+//                double couchLateral = beam.ControlPoints.First().TableTopLateralPosition;
+//                double couchVertical = beam.ControlPoints.First().TableTopVerticalPosition;
+//                double couchLongitudinal = beam.ControlPoints.First().TableTopLongitudinalPosition;
                 double couchAngle = beam.ControlPoints.First().PatientSupportAngle;  // couch angle defined as IEC 61217
                 if (couchAngle != 0)
                 {
@@ -1563,9 +1624,9 @@ namespace ChartCheck.Core
                     WriteInColor($"Pass.\n", ConsoleColor.Green);
                 }
                 WriteInColor(String.Format("{0,-30}", "MU:"));
-                WriteInColor($"{beam.Meterset.Value.ToString("n1")} {beam.Meterset.Unit}\n", ConsoleColor.Yellow);
+                WriteInColor($"{beam.Meterset.Value:n1} {beam.Meterset.Unit}\n", ConsoleColor.Yellow);
                 WriteInColor(String.Format("{0,-30}", "Time:"));
-                WriteInColor($"{(beam.TreatmentTime / 60).ToString("n1")} minutes.\t", ConsoleColor.Yellow);
+                WriteInColor($"{(beam.TreatmentTime / 60):n1} minutes.\t", ConsoleColor.Yellow);
                 if (beam.Meterset.Value / beam.DoseRate * 1.2 > beam.TreatmentTime)
                 {
                     WriteInColor($"ERROR: wrong time limit.\n", ConsoleColor.Red);

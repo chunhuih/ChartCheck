@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Configuration;
 using VMS.TPS.Common.Model.API;
-using VMS.TPS.Common.Model.Types;
 using ChartCheck.Core;
 
 // TODO: Replace the following version attributes by creating AssemblyInfo.cs. You can do this in the properties of the Visual Studio project.
@@ -23,13 +22,13 @@ namespace ChartCheck
             //    string log = "Start of the app: " + System.AppDomain.CurrentDomain.FriendlyName;
             //    Log(log, w);
             //}
-            Console.SetWindowSize(120, 60);
-            Application app = null;
+            Console.SetWindowSize(120, 50);
+            Application app;
             try
             {
                 app = Application.CreateApplication();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 //Console.Error.WriteLine($"Exception: {e}");
                 Console.Error.WriteLine($"Unable to establish connection to Eclipse. Please ensure that you are running this app in an Eclipse environment.");
