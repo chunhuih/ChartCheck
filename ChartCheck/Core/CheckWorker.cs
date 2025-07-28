@@ -1082,18 +1082,36 @@ namespace ChartCheck.Core
                 }
             }
             Console.WriteLine("========= Reference point checks: =========");
-            Console.Write("Primary reference point ID: ");
-            WriteInColor($"{planSetup.PrimaryReferencePoint.Id}  ", ConsoleColor.Yellow);
-            Console.Write("Physical point (True/False): ");
-            WriteInColor($"{planSetup.PrimaryReferencePoint.HasLocation(planSetup)}\n", ConsoleColor.Yellow);
-            Console.Write("Dose limits defined for session: ");
-            WriteInColor($"{planSetup.PrimaryReferencePoint.SessionDoseLimit.Dose} {planSetup.PrimaryReferencePoint.SessionDoseLimit.Unit}; ", ConsoleColor.Yellow);
-            Console.Write("for daily: ");
-            WriteInColor($"{planSetup.PrimaryReferencePoint.DailyDoseLimit.Dose} {planSetup.PrimaryReferencePoint.DailyDoseLimit.Unit}; ", ConsoleColor.Yellow);
-            Console.Write("for total: ");
-            WriteInColor($"{planSetup.PrimaryReferencePoint.TotalDoseLimit.Dose} {planSetup.PrimaryReferencePoint.TotalDoseLimit.Unit}\n", ConsoleColor.Yellow);
-            Console.Write("Plan dose per fraction at this point: ");
-            WriteInColor($"{planSetup.PlannedDosePerFraction.Dose} {planSetup.PlannedDosePerFraction.Unit}\n", ConsoleColor.Yellow);
+            foreach(var pt in planSetup.ReferencePoints)
+            {
+                WriteInColor($"{pt.Id} ", ConsoleColor.Yellow);
+                if(pt.Id == planSetup.PrimaryReferencePoint.Id)
+                {
+                    Console.Write("(");
+                    WriteInColor("Primary", ConsoleColor.Yellow);
+                    Console.Write(") ");
+                }
+                if (planSetup.PrimaryReferencePoint.HasLocation(planSetup))
+                {
+                    WriteInColor("Physical. ", ConsoleColor.Yellow);
+                }
+                else
+                {
+                    WriteInColor("Virtual. ", ConsoleColor.Yellow);
+                }
+                Console.Write("Session/daily/total dose limits: ");
+                WriteInColor($"{planSetup.PrimaryReferencePoint.SessionDoseLimit.Dose}", ConsoleColor.Yellow);
+                Console.Write("/");
+                WriteInColor($"{planSetup.PrimaryReferencePoint.DailyDoseLimit.Dose}", ConsoleColor.Yellow);
+                Console.Write("/");
+                WriteInColor($"{planSetup.PrimaryReferencePoint.TotalDoseLimit.Dose} {planSetup.PrimaryReferencePoint.DailyDoseLimit.Unit} ", ConsoleColor.Yellow);
+                Console.Write("Plan dose/fx: ");
+                WriteInColor($"{planSetup.PlannedDosePerFraction.Dose} {planSetup.PlannedDosePerFraction.Unit}\n", ConsoleColor.Yellow);
+            }
+            if(planSetup.ReferencePoints.Count() > 1)
+            {
+                WriteInColor($"Potentially redundant refernece points exist in the plan. Please check.\n", ConsoleColor.Red);
+            }
             ImageChecks(planSetup);
             Console.WriteLine("========= Completion of checks =========\n");
         }
