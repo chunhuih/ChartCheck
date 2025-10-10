@@ -534,10 +534,13 @@ namespace ChartCheck.Core
                 CheckTBITesticularBoost(planSetup);
                 return;
             }
+            Console.WriteLine("========= Treatment plan setting checks: =========");
             //
             // Plan name checks
             //
-            WriteInColor("Checking plan name: ");
+            WriteInColor($"Checking plan ID: \"");
+            WriteInColor($"{planSetup.Id}", ConsoleColor.Yellow);
+            WriteInColor($"\" ");
             bool planNameOK = true;
             if (rx.Notes.ToLower().Contains("bolus") && !rx.Notes.ToLower().Contains("no bolus"))
             {
@@ -568,8 +571,6 @@ namespace ChartCheck.Core
             {
                 WriteInColor("Pass.\n", ConsoleColor.Green);
             }
-            // If the plan is based on 3D images, check treatment plan settings.
-            Console.WriteLine("========= Treatment plan setting checks: =========");
             var calcModel = planSetup.PhotonCalculationModel;
             Console.Write(string.Format("{0,-50}", "Calculation model: "));
             WriteInColor($"{calcModel}\n", ConsoleColor.Yellow);
@@ -809,10 +810,35 @@ namespace ChartCheck.Core
                             }
                         }
                     }
-                    if (useBolus && !beam.Name.ToLower().Contains("wb") )
+                    if (is3D && beam.Name.ToLower().Contains("ap"))
                     {
-                        WriteInColor("Is it missing bolus label?   ", ConsoleColor.Red);
-                        nameCheck = false;
+                        if ((planSetup.TreatmentOrientation == PatientOrientation.HeadFirstSupine ||
+                            planSetup.TreatmentOrientation == PatientOrientation.FeetFirstSupine) && gantryAngle != 0)
+                        {
+                            WriteInColor("Wrong label: \"AP\".   ", ConsoleColor.Red);
+                            nameCheck = false;
+                        }
+                        if ((planSetup.TreatmentOrientation == PatientOrientation.HeadFirstProne ||
+                            planSetup.TreatmentOrientation == PatientOrientation.FeetFirstProne) && gantryAngle != 180)
+                        {
+                            WriteInColor("Wrong label: \"AP\".   ", ConsoleColor.Red);
+                            nameCheck = false;
+                        }
+                    }
+                    if (is3D && beam.Name.ToLower().Contains("pa"))
+                    {
+                        if ((planSetup.TreatmentOrientation == PatientOrientation.HeadFirstSupine ||
+                            planSetup.TreatmentOrientation == PatientOrientation.FeetFirstSupine) && gantryAngle != 180)
+                        {
+                            WriteInColor($"Wrong label: \"PA\".   ", ConsoleColor.Red);
+                            nameCheck = false;
+                        }
+                        if ((planSetup.TreatmentOrientation == PatientOrientation.HeadFirstProne ||
+                            planSetup.TreatmentOrientation == PatientOrientation.FeetFirstProne) && gantryAngle != 0)
+                        {
+                            WriteInColor("Wrong label: \"PA\".   ", ConsoleColor.Red);
+                            nameCheck = false;
+                        }
                     }
                     if (rx != null && (rx.Notes.ToLower().Contains("hyperarc") || rx.Notes.ToLower().Contains("hyper arc")) &&
                         beam.Name.ToLower().Contains("ha") == false)
