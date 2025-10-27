@@ -291,7 +291,14 @@ namespace ChartCheck.Core
                             WriteInColor($"Plan ID: ");
                             WriteInColor($"{patientPlan.PlanSetupId.Value} ", color);
                             WriteInColor($"Plan name: ");
-                            WriteInColor($"{patientPlan.PlanSetupName.Value} ", color);
+                            if (patientPlan.PlanSetupName == null)
+                            {
+                                WriteInColor($"", color);
+                            }
+                            else
+                            {
+                                WriteInColor($"{patientPlan.PlanSetupName.Value} ", color);
+                            }
                             WriteInColor($"# of fractions: ");
                             WriteInColor($"{patientPlan.NoOfFractions.Value} ", color);
                             if (patientPlan.NoOfFractions.Value != nFx)
@@ -542,7 +549,7 @@ namespace ChartCheck.Core
             WriteInColor($"{planSetup.Id}", ConsoleColor.Yellow);
             WriteInColor($"\" ");
             bool planNameOK = true;
-            if (rx.Notes.ToLower().Contains("bolus") && !rx.Notes.ToLower().Contains("no bolus"))
+            if (rx != null && rx.Notes.ToLower().Contains("bolus") && !rx.Notes.ToLower().Contains("no bolus"))
             {
                 useBolus = true;
             }
