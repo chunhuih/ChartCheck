@@ -574,6 +574,12 @@ namespace ChartCheck.Core
                 WriteInColor("Missing EEBH label.\n", ConsoleColor.Red);
                 planNameOK = false;
             }
+            if (rx != null && (rx.Notes.ToLower().Contains("hyperarc") || rx.Notes.ToLower().Contains("hyper arc")) &&
+                planSetup.Id.ToLower().Contains("ha") == false)
+            {
+                WriteInColor("Missing HA for a HyperArc plan.   ", ConsoleColor.Red);
+                planNameOK = false;
+            }
             if (planNameOK)
             {
                 WriteInColor("Pass.\n", ConsoleColor.Green);
@@ -846,12 +852,6 @@ namespace ChartCheck.Core
                             WriteInColor("Wrong label: \"PA\".   ", ConsoleColor.Red);
                             nameCheck = false;
                         }
-                    }
-                    if (rx != null && (rx.Notes.ToLower().Contains("hyperarc") || rx.Notes.ToLower().Contains("hyper arc")) &&
-                        beam.Name.ToLower().Contains("ha") == false)
-                    {
-                        WriteInColor("Missing HA for HyperArc fields.   ", ConsoleColor.Red);
-                        nameCheck = false;
                     }
                     if (beam.Name == "")
                     {
