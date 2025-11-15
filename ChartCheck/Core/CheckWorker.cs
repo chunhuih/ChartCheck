@@ -460,38 +460,8 @@ namespace ChartCheck.Core
                 {
                     WriteInColor($"\tERROR: Plan fraction check failed.\n", ConsoleColor.Red);
                 }
-                // check session info
-                // These are sessions that are scheduled in Plan Scheduling workspace.
                 Console.Write("Frequency: ");
                 WriteInColor($"{GetFrequencyFromAria(planSetup)}  ", ConsoleColor.Yellow);
-                int numSessions = planSetup.TreatmentSessions.Count();
-                Console.Write($"Number of scheduled sessions: ");
-                WriteInColor($"{planSetup.TreatmentSessions.Count()} ", ConsoleColor.Yellow);
-                if (numSessions == planSetup.NumberOfFractions)
-                {
-                    WriteInColor($"\tSession check passed.\n", ConsoleColor.Green);
-                }
-                else
-                {
-                    WriteInColor($"\tERROR: Session check failed.\n", ConsoleColor.Red);
-                }
-                for (int i = 0; i < planSetup.TreatmentSessions.Count(); i++)
-                {
-                    if(i == 0)
-                    {
-                        Console.Write($"Sessions: ");
-                    }
-                    var color = ConsoleColor.Yellow;
-                    if (planSetup.TreatmentSessions.ElementAt(i).Status == TreatmentSessionStatus.Completed)
-                    {
-                        color = ConsoleColor.Green;
-                    }
-                    WriteInColor($"{i + 1} {planSetup.TreatmentSessions.ElementAt(i).Status}, ", color);
-                    if(i == planSetup.TreatmentSessions.Count() - 1)
-                    {
-                        Console.WriteLine("\b\b.");
-                    }
-                }
                 var notes = rx.Notes;
                 if (notes.ToLower().Contains("nanodot") || notes.ToLower().Contains("vivo"))
                 {
@@ -525,6 +495,36 @@ namespace ChartCheck.Core
             else
             {
                 WriteInColor("ERROR: The prescription is missing for this plan.\n", ConsoleColor.Red);
+            }
+            // check session info
+            // These are sessions that are scheduled in Plan Scheduling workspace.
+            int numSessions = planSetup.TreatmentSessions.Count();
+            Console.Write($"Number of scheduled sessions: ");
+            WriteInColor($"{planSetup.TreatmentSessions.Count()} ", ConsoleColor.Yellow);
+            if (numSessions == planSetup.NumberOfFractions)
+            {
+                WriteInColor($"\t Matching number of fractions in the plan: {planSetup.NumberOfFractions}.\n", ConsoleColor.Green);
+            }
+            else
+            {
+                WriteInColor($"\tWARNING: Different from the number of fractions in the plan: {planSetup.NumberOfFractions}.\n", ConsoleColor.Red);
+            }
+            for (int i = 0; i < planSetup.TreatmentSessions.Count(); i++)
+            {
+                if (i == 0)
+                {
+                    Console.Write($"Sessions: ");
+                }
+                var color = ConsoleColor.Yellow;
+                if (planSetup.TreatmentSessions.ElementAt(i).Status == TreatmentSessionStatus.Completed)
+                {
+                    color = ConsoleColor.Green;
+                }
+                WriteInColor($"{i + 1} {planSetup.TreatmentSessions.ElementAt(i).Status}, ", color);
+                if (i == planSetup.TreatmentSessions.Count() - 1)
+                {
+                    Console.WriteLine("\b\b.");
+                }
             }
             if (IsConventionalTBI(planSetup))
             {
@@ -577,7 +577,7 @@ namespace ChartCheck.Core
             if (rx != null && (rx.Notes.ToLower().Contains("hyperarc") || rx.Notes.ToLower().Contains("hyper arc")) &&
                 planSetup.Id.ToLower().Contains("ha") == false)
             {
-                WriteInColor("Missing HA for a HyperArc plan.   ", ConsoleColor.Red);
+                WriteInColor("Missing HA for a HyperArc plan.\n", ConsoleColor.Red);
                 planNameOK = false;
             }
             if (planNameOK)
