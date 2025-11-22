@@ -559,21 +559,6 @@ namespace ChartCheck.Core
                 WriteInColor("Plan name is missing EEBH (end of expiration breath hold) label.\n", ConsoleColor.Red);
                 planNameOK = false;
             }
-            if (rx != null && useDIBH && !planSetup.Id.ToLower().Contains("bh"))
-            {
-                WriteInColor("Plan name is missing BH for DIBH treatments.\n", ConsoleColor.Red);
-                planNameOK = false;
-            }
-            if (rx != null && useDIBH && planSetup.Id.ToLower().Contains("eebh"))
-            {
-                WriteInColor("Using EEBH instead of BH (for deep inspiration breath hold) label.\n", ConsoleColor.Red);
-                planNameOK = false;
-            }
-            if (rx != null && useEEBH && !planSetup.Id.ToLower().Contains("eebh"))
-            {
-                WriteInColor("Missing EEBH label.\n", ConsoleColor.Red);
-                planNameOK = false;
-            }
             if (rx != null && (rx.Notes.ToLower().Contains("hyperarc") || rx.Notes.ToLower().Contains("hyper arc")) &&
                 planSetup.Id.ToLower().Contains("ha") == false)
             {
