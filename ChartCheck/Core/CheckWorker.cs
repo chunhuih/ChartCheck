@@ -409,8 +409,8 @@ namespace ChartCheck.Core
                 WriteInColor($"{status}. Last modified at {planSetup.HistoryDateTime} by {planSetup.HistoryUserDisplayName}\n", ConsoleColor.Red);
             }
             // check prescription info.
-            bool useDIBH = false;
-            bool useEEBH = false;
+            // bool useDIBH = false;
+            // bool useEEBH = false;
             bool inVivoDosimetry = false;
             bool useBolus = false;
             Console.WriteLine("========= Prescription checks: =========");
@@ -467,7 +467,7 @@ namespace ChartCheck.Core
                 {
                     inVivoDosimetry = true;
                 }
-                if (notes.ToLower().Contains("dibh"))
+/*                if (notes.ToLower().Contains("dibh"))
                 {
                     useDIBH = true;
                 }
@@ -480,7 +480,7 @@ namespace ChartCheck.Core
                 else if (notes.ToLower().Contains("eebh") || rx.Notes.ToLower().Contains("end exp") || rx.Notes.ToLower().Contains("end-exp"))
                 {
                     useEEBH = true;
-                }
+                } */
                 WriteInColor("Rx notes: ");
                 WriteInColor($"{notes}\n", ConsoleColor.Yellow);
                 if (inVivoDosimetry)
@@ -552,12 +552,6 @@ namespace ChartCheck.Core
             if (rx != null && rx.Notes.ToLower().Contains("bolus") && !rx.Notes.ToLower().Contains("no bolus"))
             {
                 useBolus = true;
-            }
-            if (rx != null && (rx.Notes.ToLower().Contains("eebh") &&
-                !planSetup.Id.ToLower().Contains("eebh")))
-            {
-                WriteInColor("Plan name is missing EEBH (end of expiration breath hold) label.\n", ConsoleColor.Red);
-                planNameOK = false;
             }
             if (rx != null && (rx.Notes.ToLower().Contains("hyperarc") || rx.Notes.ToLower().Contains("hyper arc")) &&
                 planSetup.Id.ToLower().Contains("ha") == false)
@@ -985,9 +979,9 @@ namespace ChartCheck.Core
                 WriteInColor("Error: multiple tolerance table types are defined for the fields: ", ConsoleColor.Red);
                 foreach (var table in toleranceTableList)
                 {
-                    WriteInColor($"\"{table}>\"\t", ConsoleColor.Red);
+                    WriteInColor($"\"{table}\", ", ConsoleColor.Red);
                 }
-                Console.WriteLine("");
+                WriteInColor("\b\b.\n",ConsoleColor.Red);
             }
             //
             Console.WriteLine("========= Setup field checks: =========");
@@ -1108,14 +1102,25 @@ namespace ChartCheck.Core
                     Console.Write("(");
                     WriteInColor("Primary", ConsoleColor.Yellow);
                     Console.Write(") ");
-                }
-                if (planSetup.PrimaryReferencePoint.HasLocation(planSetup))
-                {
-                    WriteInColor("Physical. ", ConsoleColor.Yellow);
+                    if (pt.HasLocation(planSetup))
+                    {
+                        WriteInColor("Physical. ", ConsoleColor.Red);
+                    }
+                    else
+                    {
+                        WriteInColor("Virtual. ", ConsoleColor.Green);
+                    }
                 }
                 else
                 {
-                    WriteInColor("Virtual. ", ConsoleColor.Yellow);
+                    if (pt.HasLocation(planSetup))
+                    {
+                        WriteInColor("Physical. ", ConsoleColor.Yellow);
+                    }
+                    else
+                    {
+                        WriteInColor("Virtual. ", ConsoleColor.Yellow);
+                    }
                 }
                 Console.Write("Session/daily/total dose limits: ");
                 WriteInColor($"{planSetup.PrimaryReferencePoint.SessionDoseLimit.Dose}", ConsoleColor.Yellow);
