@@ -97,7 +97,12 @@ namespace ChartCheck
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     mrn = Console.ReadLine();
                     Console.ResetColor();
-                    if (mrn == "")
+                    if (mrn is null)
+                    {
+                        mrn = "";
+                        Console.WriteLine("Please enter a valid patient ID.");
+                    }
+                    else if (mrn == "")
                         return;
                 }
             }

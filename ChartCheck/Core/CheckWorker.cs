@@ -1123,17 +1123,39 @@ namespace ChartCheck.Core
                     }
                 }
                 Console.Write("Session/daily/total dose limits: ");
-                WriteInColor($"{planSetup.PrimaryReferencePoint.SessionDoseLimit.Dose}", ConsoleColor.Yellow);
+                if(double.IsNaN(pt.SessionDoseLimit.Dose))
+                {
+                    WriteInColor($"{pt.SessionDoseLimit.Dose}", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"{pt.SessionDoseLimit.Dose}", ConsoleColor.Yellow);
+                }
                 Console.Write("/");
-                WriteInColor($"{planSetup.PrimaryReferencePoint.DailyDoseLimit.Dose}", ConsoleColor.Yellow);
+                if (double.IsNaN(pt.DailyDoseLimit.Dose))
+                {
+                    WriteInColor($"{pt.DailyDoseLimit.Dose}", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"{pt.DailyDoseLimit.Dose}", ConsoleColor.Yellow);
+                }
                 Console.Write("/");
-                WriteInColor($"{planSetup.PrimaryReferencePoint.TotalDoseLimit.Dose} {planSetup.PrimaryReferencePoint.DailyDoseLimit.Unit} ", ConsoleColor.Yellow);
+                if (double.IsNaN(pt.TotalDoseLimit.Dose))
+                {
+                    WriteInColor($"{pt.TotalDoseLimit.Dose}", ConsoleColor.Red);
+                }
+                else
+                {
+                    WriteInColor($"{pt.TotalDoseLimit.Dose}", ConsoleColor.Yellow);
+                }
+                WriteInColor($" {pt.DailyDoseLimit.Unit} ", ConsoleColor.Yellow);
                 Console.Write("Plan dose/fx: ");
                 WriteInColor($"{planSetup.PlannedDosePerFraction.Dose} {planSetup.PlannedDosePerFraction.Unit}\n", ConsoleColor.Yellow);
             }
             if(planSetup.ReferencePoints.Count() > 1)
             {
-                WriteInColor($"Potentially redundant refernece points exist in the plan. Please check.\n", ConsoleColor.Red);
+                WriteInColor($"Potentially redundant reference points exist in the plan. Please check.\n", ConsoleColor.Red);
             }
             ImageChecks(planSetup);
             Console.WriteLine("========= Completion of checks =========\n");
